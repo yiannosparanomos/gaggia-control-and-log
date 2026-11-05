@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f3f0">
+<title>Gaggia</title>
+</head>
+<body>
+<div class="app" lang="en">
+  <header>
+    <div class="word">gaggia<span>.</span></div>
+    <div class="conn" id="conn"><span class="dot"></span><span id="connText">connected.</span></div>
+  </header>
+
+  <div class="sim" id="simBanner" hidden>Preview. No ESP32 is connected, so everything is simulated here. Your phone shows this same screen at the ESP32 address.</div>
+
+  <div class="sim" id="storageBanner" role="alert" hidden>Journal storage did not start, so shots can't be read or saved. Nothing has been erased. Don't erase the flash; check the serial monitor.</div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tabTimer" aria-selected="true" type="button">timer.</button>
+    <button class="tab" role="tab" id="tabLog" aria-selected="false" type="button">journal.</button>
+    <button class="tab" role="tab" id="tabBeans" aria-selected="false" type="button">coffees.</button>
+  </div>
+
+  <!-- ===== timer ===== -->
+  <div id="viewTimer" class="view">
+    <section class="clock">
+      <div class="clock-top">
+        <div class="state" id="state"><span class="dot"></span><span id="stateText">ready.</span></div>
+        <div class="target" id="target">stop at 30 s.</div>
+      </div>
+      <div class="digits"><span id="sec">0.0</span><small>s</small></div>
+      <div class="dots" id="dots"></div>
+    </section>
+
+    <button class="main go" id="main" type="button">start.</button>
+    <div class="relay" id="relay"><span class="dot"></span>relay.</div>
+    <div class="brewing-coffee" id="weekLine" hidden></div>
+
+    <section class="card save" id="saveCard" hidden>
+      <div class="row">
+        <div>
+          <div class="lbl">last shot.</div>
+          <div class="big"><span id="saveTime">0.0</span> s</div>
+        </div>
+        <button class="btn" id="saveOpen" type="button">log it.</button>
+      </div>
+      <p class="hint">Add dose, yield and how it tasted.</p>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <h2>auto stop.</h2>
+        <input type="checkbox" class="switch" id="auto" checked aria-label="Auto stop">
+      </div>
+      <div class="stepper" id="stepper">
+        <button class="step" id="minus" type="button" aria-label="One second less">−</button>
+        <div class="stepval"><span id="limit">30</span><small> s</small></div>
+        <button class="step" id="plus" type="button" aria-label="One second more">+</button>
+      </div>
+      <div class="chips center" id="presets">
+        <button class="chip" type="button" data-v="25">25 s</button>
+        <button class="chip" type="button" data-v="28">28 s</button>
+        <button class="chip" type="button" data-v="30">30 s</button>
+        <button class="chip" type="button" data-v="35">35 s</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>recent shots.</h2>
+      <ul class="list" id="recent"></ul>
+      <p class="hint" id="recentEmpty">No shots yet.</p>
+    </section>
+
+    <details class="card">
+      <summary>manual.</summary>
+      <p class="hint">If you pressed the button on the machine and this screen no longer matches what it is doing, use these. A press here has no timer and no safety stop, and it can't be used during a timed shot.</p>
+      <button class="btn ghost" id="press" type="button">press coffee button.</button>
+      <button class="btn ghost" id="reset" type="button">reset to ready.</button>
+    </details>
+  </div>
+
+  <!-- ===== journal ===== -->
+  <div id="viewLog" class="view" hidden>
+    <section class="card">
+      <div class="row">
+        <div class="seg" role="group" aria-label="Journal view">
+          <button type="button" id="modeList" aria-pressed="true">list.</button>
+          <button type="button" id="modeCal" aria-pressed="false">calendar.</button>
+        </div>
+        <button class="btn ghost small" id="newEntry" type="button">+ new.</button>
+      </div>
+
+      <div id="listWrap">
+        <div class="entries" id="log"></div>
+        <p class="hint" id="logEmpty" hidden>No saved shots yet. After a shot stops, tap “log it.”</p>
+      </div>
+
+      <div id="calWrap" hidden>
+        <div class="cal-head">
+          <button class="cal-nav" id="calPrev" type="button" aria-label="Previous month">‹</button>
+          <div class="cal-title" id="calTitle"></div>
+          <button class="cal-nav" id="calNext" type="button" aria-label="Next month">›</button>
+        </div>
+        <div class="cal" id="calGrid"></div>
+        <div class="lbl" id="dayTitle"></div>
+        <div class="entries" id="dayList"></div>
+        <p class="hint" id="dayEmpty">No shots this day.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>backup.</h2>
+      <p class="hint">Your journal lives in the ESP32 memory and survives normal code uploads. A backup file keeps it safe even if the memory is erased.</p>
+      <div class="chips">
+        <a class="btn small" id="backupLink" href="/api/backup" download="gaggia-backup.json">download backup.</a>
+        <label class="btn ghost small" for="restoreFile">restore from file.</label>
+        <input type="file" id="restoreFile" accept="application/json,.json" hidden>
+      </div>
+      <p class="hint" id="backupSimNote" hidden>Download works on the ESP32 page on your phone, not in this preview.</p>
+    </section>
+  </div>
+
+  <!-- ===== coffees ===== -->
+  <div id="viewBeans" class="view" hidden>
+    <section class="card">
+      <h2>this week.</h2>
+      <p class="hint">The bags you are drinking now. They show up first when you log a shot.</p>
+      <div class="beans" id="weekList"></div>
+      <p class="hint" id="weekEmpty" hidden>No coffee picked for this week. Tap “this week” on one below, or add a new bag.</p>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <h2>add a bag.</h2>
+      </div>
+      <form class="addform" id="addBean" autocomplete="off">
+        <div class="field"><label for="bName">name.</label><input id="bName" required placeholder="e.g. Ethiopia Guji"></div>
+        <div class="grid2">
+          <div class="field"><label for="bRoaster">roaster.</label><input id="bRoaster" placeholder="e.g. Third Place"></div>
+          <div class="field"><label for="bRoasted">roasted on.</label><input id="bRoasted" type="date"></div>
+        </div>
+        <div class="row">
+          <label for="bWeek">drinking it this week.</label>
+          <input type="checkbox" class="switch" id="bWeek" checked>
+        </div>
+        <button class="btn" type="submit">add coffee.</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>all coffees.</h2>
+      <div class="beans" id="libList"></div>
+      <p class="hint" id="libEmpty" hidden>Older bags appear here once you take them off this week.</p>
+    </section>
+  </div>
+</div>
+
+<!-- ===== brew sheet ===== -->
+<div class="sheet" id="sheet" hidden>
+  <form class="sheet-in" id="form" lang="en" autocomplete="off">
+    <div class="sheet-head">
+      <h2>log shot.</h2>
+      <button class="btn ghost small" type="button" id="closeX" aria-label="Close">✕</button>
+    </div>
+
+    <div class="field">
+      <span class="lbl">coffee.</span>
+      <div class="chips" id="fWeek"></div>
+      <div class="inline">
+        <input id="fCoffee" placeholder="type a coffee" aria-label="Coffee name">
+        <button class="btn ghost small" type="button" id="fOldBtn">old coffees.</button>
+      </div>
+      <select id="fOld" hidden aria-label="Pick an older coffee"></select>
+    </div>
+    <div class="field"><label for="fGrind">grind.</label><input id="fGrind" placeholder="e.g. 12"></div>
+
+    <div class="grid3">
+      <div class="field"><label for="fDose">dose (g).</label><input id="fDose" type="number" inputmode="decimal" step="0.1" min="0" placeholder="18.0"></div>
+      <div class="field"><label for="fYield">yield (g).</label><input id="fYield" type="number" inputmode="decimal" step="0.1" min="0" placeholder="36.0"></div>
+      <div class="field"><label for="fTime">time (s).</label><input id="fTime" type="number" inputmode="decimal" step="0.1" min="0" placeholder="28.0"></div>
+    </div>
+    <div class="ratio"><span>ratio.</span><b id="fRatio">–</b></div>
+
+    <div id="scales"></div>
+    <p class="advice" id="advice" hidden></p>
+
+    <div class="field">
+      <span class="lbl">notes.</span>
+      <div class="chips" id="notes"></div>
+    </div>
+    <div class="field"><label for="fComment">comments.</label><textarea id="fComment" placeholder="What you liked, what you would change next time."></textarea></div>
+
+    <div class="actions">
+      <button class="btn ghost" type="button" id="cancel">cancel.</button>
+      <button class="btn" type="submit">save.</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+# secrets and personal files
+firmware/src/secrets.h
+CLAUDE.local.md
+.claude/settings.local.json
+backups/
+
+# third-party image we can't license (see todo.md)
+docs/images/carezza-1996-schematic.png
+
+# build output
+web/node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+firmware/.pio/
+firmware/.vscode/
+
+# OS / editor
+.DS_Store
+Thumbs.db

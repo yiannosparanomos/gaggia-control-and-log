@@ -1,0 +1,47 @@
+# Decisions
+
+Why things are the way they are. For the events behind them, see [history.md](history.md).
+
+## Safety
+
+| Decision | Why |
+|---|---|
+| The ESP32 connects to the machine only through the relay's dry contacts | The button board is not isolated from 230 V mains. Probing it while plugged in tripped the house RCD |
+| Nothing starts the pump without a human action on the phone | No timers or automation may start a shot unattended. Future MCP tools can read and log, but can't start the pump |
+| 60 s safety stop on every timed shot, separate from the auto-stop limit | A forgotten or mistimed shot still ends |
+| Auto-stop runs on the ESP32, not in the app | It keeps working if the phone sleeps or loses WiFi |
+
+## Hardware
+
+| Decision | Why |
+|---|---|
+| Relay press is 500 ms, with at least 1 s between presses | Shorter timings caused missed presses and double clicks |
+| Relay on GPIO19, GPIO18 kept as an input forever | The two pins are solder-bridged on this board |
+| Load cell A+/A− swap corrected in code with a negative factor (−756.8) | Simpler than resoldering |
+| 1 kg load cell rather than 5 kg | Much better resolution for a shot of about 40 g |
+
+## Software
+
+| Decision | Why |
+|---|---|
+| Time-based control first, scale postponed | Gets phone control working sooner. The old scale code is kept in [legacy/](legacy/) |
+| PlatformIO in VS Code instead of the Arduino IDE | Better fit for developing with a repo and Claude Code |
+| UI built into one HTML file, gzipped into the firmware | Storing it on LittleFS would need a filesystem upload, which wipes the journal |
+| Fonts and everything else bundled locally | The page must work with no internet access |
+| Stats, calendar and filtering run in the browser | The ESP32 has little memory to spare |
+| WiFi credentials in a git-ignored `secrets.h` | They stay out of the repo |
+| A failed LittleFS mount never formats the flash | A failed mount may be recoverable, and a format would erase the journal |
+
+## API
+
+| Decision | Why |
+|---|---|
+| Everything under `/api` | Keeps the app and the API separate |
+| Actions and settings are POST only | Link previews and browser prefetches can't press the relay |
+| No authentication | The API trusts the home network. Any device on the WiFi, or a web page open on one, can still send a POST. Accepted for this project |
+
+## Design
+
+Light and monochrome with one signal red, dot-matrix numbers, English only, and lowercase labels
+ending in a full stop. It's built for one-handed use on an Android phone. The UI went through a dark
+version before settling on this.

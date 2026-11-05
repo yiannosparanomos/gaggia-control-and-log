@@ -1,0 +1,21 @@
+{
+  "name": "gaggia-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build && node ../tools/embed.mjs",
+    "preview": "vite preview --host"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5",
+    "vite-plugin-singlefile": "^2.2.0"
+  },
+  "dependencies": {
+    "@fontsource/commissioner": "^5.2.5",
+    "@fontsource/doto": "^5.2.5"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true
+  }
+}

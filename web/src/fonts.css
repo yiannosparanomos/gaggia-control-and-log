@@ -1,0 +1,10 @@
+/* Fonts bundled into the page (woff2 only, Latin only) so it works without internet.
+   Each weight adds ~18 KB to the firmware; add weights sparingly. */
+@font-face { font-family: "Commissioner"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("@fontsource/commissioner/files/commissioner-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Commissioner"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("@fontsource/commissioner/files/commissioner-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Commissioner"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url("@fontsource/commissioner/files/commissioner-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Doto"; font-style: normal; font-weight: 900; font-display: swap;
+  src: url("@fontsource/doto/files/doto-latin-900-normal.woff2") format("woff2"); }
