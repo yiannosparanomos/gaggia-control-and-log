@@ -21,8 +21,9 @@ Bugs and cleanup found while reading the code on 5 Nov 2026. Planned work is in
 
 ## Fixed in code: check on the real machine
 
-Download a backup from `/api/backup` before the first upload.
+The first upload needs the cable: `npm run flash -- --usb` in `web/`. It backs up the journal first.
 
+- [ ] After the first upload, `npm run flash` works over WiFi.
 - [ ] Actions and settings are POST only. Start, stop, change the limit, and toggle auto stop from the phone.
 - [ ] Opening `/api/start` in a browser returns 404 and the relay doesn't click.
 - [ ] Reset during a shot needs a second tap, and `/api/press` does nothing during a shot.
@@ -35,8 +36,6 @@ Download a backup from `/api/backup` before the first upload.
 
 ## Cleanup
 
-- [ ] The header comment in `firmware/src/main.cpp` still mentions the Arduino IDE and `/backup`.
-- [ ] Pin `platform = espressif32` to a version in `platformio.ini`, so builds don't change on their own.
 - [ ] Find out who owns the 1996 Carezza wiring diagram and whether it can be shared. It was removed from
       the repo (a local copy is git-ignored at `docs/images/carezza-1996-schematic.png`). If it's free to
       share, add it back to the end of `docs/hardware.md`.

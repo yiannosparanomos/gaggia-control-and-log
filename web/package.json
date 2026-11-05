@@ -8,7 +8,8 @@
     "preview": "vite preview --host",
     "check": "node ../tools/check.mjs",
     "test:e2e": "playwright test --project=e2e",
-    "test:ui": "playwright test --project=ui"
+    "test:ui": "playwright test --project=ui",
+    "flash": "node ../tools/flash.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

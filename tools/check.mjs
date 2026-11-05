@@ -27,6 +27,10 @@ const steps = {
     if (bad.length) fail(`These must not be in git: ${bad.join(', ')}`);
   },
 
+  'build tool tests'() {
+    if (!run('node', ['--test', '../tools/'], web)) fail('Build tool tests failed.');
+  },
+
   'UI builds, is up to date in the firmware, and fits'() {
     if (!run('npx', ['vite', 'build', '--logLevel', 'warn'], web)) fail('The UI build failed.');
     const header = readFileSync(join(firmware, 'src', 'web_assets.h'), 'utf8');

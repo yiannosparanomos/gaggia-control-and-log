@@ -16,17 +16,20 @@ before any non-trivial task. Known bugs: `todo.md`. Planned work: `docs/roadmap.
   - `src/web_assets.h` GENERATED from `web/` by `tools/embed.mjs`. Never edit by hand.
 - `web/` Vite project, plain HTML/CSS/JS. `index.html`, `src/main.js`, `src/style.css`, `src/fonts.css`.
   Built into ONE self-contained `index.html` (vite-plugin-singlefile), then gzipped into the firmware.
-- `tools/embed.mjs` dist/index.html → gzip → C byte array.
+- `firmware/src/shot.h` the shot rules, with no Arduino code. Tests: `firmware/test/`.
+- `tools/embed.mjs` dist/index.html → gzip → C byte array. `tools/check.mjs` runs all checks. `tools/flash.mjs` backs up and uploads.
+- `web/tests/` browser tests against a fake ESP32.
 - `docs/` start at `docs/README.md`. Includes hardware, architecture, API, development notes, decisions, roadmap, history, images/, legacy/ (old scale code, not built).
 - `todo.md` known bugs and cleanup.
 
 ## Commands
-- UI dev, simulated machine: `cd web && npm run dev`, open `http://localhost:5173/?sim`
-- UI dev, real ESP32: `cd web && npm run dev` (proxies `/api/*` to `ESP` env var, default `http://192.168.2.6`)
-- Build UI into firmware: `cd web && npm run build` (always run before `pio run` after UI changes)
-- Firmware: `cd firmware && pio run` / `pio run -t upload` / `pio device monitor` (115200 baud)
-- Verify a change: `npm run build` must succeed, then `pio run` must compile with no errors.
-  Report the flash usage line ("Flash: [====] xx%").
+Run in `web/`. Details: `docs/development.md`.
+- UI dev, simulated machine: `npm run dev`, open `http://localhost:5173/?sim`
+- UI dev, real ESP32: `npm run dev` (proxies `/api/*` to the `ESP` env var)
+- Build UI into firmware: `npm run build` (always after UI changes)
+- **Verify a change: `npm run check` must pass.** Report the firmware size line.
+- Optional phone layout test: `npm run test:ui`
+- Upload: `npm run flash` (WiFi) or `npm run flash -- --usb`. Only the owner decides when to flash.
 
 ## Hardware (do not change without asking)
 - Relay module (active LOW): IN → **GPIO19**, VCC → VIN (5V), GND → GND. COM + NO → the two PB1 pads
@@ -47,7 +50,7 @@ before any non-trivial task. Known bugs: `todo.md`. Planned work: `docs/roadmap.
 - LittleFS on the default partition (`default.csv`, ~1.4 MB):
   - `/brews.jsonl` and `/coffees.json`, plus settings in NVS. Formats: `docs/api.md`.
 - **Never** run `pio run -t uploadfs`, `pio run -t erase`, or change the partition table: all wipe
-  the journal. If a change truly needs it, tell the user to download a backup first (`/api/backup`).
+  the journal. If a change truly needs it, tell the user to take a backup first (`npm run flash -- --dry-run`).
 - Heavy computation (stats, calendar, filtering) happens in the browser, not on the ESP32.
 
 ## API

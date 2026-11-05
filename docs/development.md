@@ -7,21 +7,73 @@ The everyday commands are in the [README](../README.md). This page covers what t
 The journal lives on the ESP32's flash, and a normal `pio run -t upload` doesn't touch it.
 
 - Never run `pio run -t uploadfs` or `pio run -t erase`, and don't change the partition table.
-- Download a backup from `/api/backup` before any change that touches partitions or the storage format.
+- Take a backup before any change that touches partitions or the storage format (`npm run flash -- --dry-run`).
 - A new storage format needs a migration that reads the old files.
+
+## Testing
+
+`npm run check` in `web/` runs everything a change must pass, and CI runs the same command. None of it uses
+AI tokens.
+
+| Check | What it catches |
+|---|---|
+| No private files tracked | `secrets.h`, `CLAUDE.local.md` or journal backups in git |
+| Build tool tests | Mistakes in the flash command's safety checks |
+| UI builds, up to date, under 90 KB gzipped | A broken build, firmware shipping an old UI, a page that's too big |
+| Browser tests | Buttons sending wrong requests, and data-loss bugs. A real browser clicks through the app against a fake ESP32, so this tests the app rather than the C++ routes |
+| Shot logic tests | Wrong limits, cooldown, or safety stop. They run on the PC |
+| Firmware compiles, under 97% of its partition | C++ errors, and firmware too big for its flash slot |
+
+The shot logic tests need a C++ compiler for the PC, which Windows doesn't have by default. Without one,
+`npm run check` skips them and CI still runs them. To add one:
+
+```sh
+pio pkg install -g -t platformio/toolchain-gccmingw32
+```
+
+The first run also needs a browser for the tests: `npx playwright install chromium`.
+
+**Optional:** `npm run test:ui` checks phone-sized layouts, sideways scrolling and tap target sizes, and saves
+screenshots to `web/test-results/ui/`. It isn't required for merging.
+
+Nothing here runs the C++ routes or flash storage, so check those on the real ESP32 after a change to them.
 
 ## Building
 
-- PlatformIO's `espressif32` platform currently installs Arduino core **3.3.12**. Earlier builds used
-  the Arduino IDE with core 3.3.x, so the core line hasn't changed.
-- The platform version isn't pinned yet, so an update can change the core without warning.
-- Flash use is about 90% of the 1.25 MB app partition. The Arduino IDE build of the same code, with
-  the page inline, was about 80%.
-- The gzipped page is about 74 KB.
+- `platformio.ini` pins the platform version, which currently brings Arduino core **3.3.12**.
+- Flash use is about 93% of the 1.25 MB app partition, and it can't grow without wiping the journal.
+- The gzipped page is about 72 KB.
 - npm may ask to approve esbuild's install script (`npm install-scripts approve esbuild`). It's Vite's
   normal build tool.
+- PlatformIO often isn't on PATH when installed through VS Code. The npm scripts find it anyway. To run it
+  yourself on Windows, use `~\.platformio\penv\Scripts\pio.exe`.
 
 ## Uploading
+
+Run this in `web/`. It's the only command you normally need:
+
+```sh
+npm run flash            # over WiFi
+npm run flash -- --usb   # over the USB cable
+```
+
+It does the following, and uploads nothing if an earlier step fails:
+
+1. Checks the ESP32 is reachable and isn't brewing.
+2. Saves the journal to `backups/`, which git ignores.
+3. Builds the UI into the firmware.
+4. Uploads the firmware. This never touches the journal's storage.
+5. Waits for the restart and confirms the journal has the same number of brews.
+
+`npm run flash -- --dry-run` does only the first two steps, so it's also a quick way to take a backup.
+
+**The first upload needs the cable**, because older firmware has no WiFi updates. WiFi uploads can't start
+during a shot. If new firmware crashes before joining WiFi, you'll need the cable again.
+
+If the ESP32 can't be reached at all, there's no backup to take, so the command stops. Only then, use
+`pio run -t upload` directly in `firmware/`.
+
+With the cable:
 
 - Close the Arduino IDE and any other serial monitor first, or the COM port will be busy.
 - If you get "Wrong boot mode" errors, hold **BOOT** during "Connecting...".
