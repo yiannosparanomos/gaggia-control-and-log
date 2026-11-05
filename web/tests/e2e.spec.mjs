@@ -159,3 +159,37 @@ test('the demo page shows the machine following the app', async ({ page, fake })
   await expect(machine).toHaveAttribute('data-pump', 'off');
   expect(errors).toEqual([]);
 });
+
+test('reset is only confirmed after the question was really asked', async ({ app, fake }) => {
+  await openManual(app);
+  await app.locator('#reset').click();
+  await sent(fake, 'POST /api/reset');
+  expect(fake.log).not.toContain('POST /api/reset?confirm=1');
+});
+
+test('an unconfirmed reset from a stale screen leaves a running shot alone', async ({ app, fake }) => {
+  await openManual(app);
+  // The screen keeps seeing "idle", while a shot has really started, for example from another phone
+  const idle = JSON.stringify(fake.status);
+  await app.route('**/api/status', (route) => route.fulfill({ contentType: 'application/json', body: idle }));
+  fake.status.state = 'brewing';
+
+  await app.locator('#reset').click();
+  await sent(fake, 'POST /api/reset');
+  expect(fake.status.state).toBe('brewing');
+});
+
+test('the journal reloads after a shot, because the ESP32 refuses reads during one', async ({ app, fake }) => {
+  fake.brews.push({ id: 1, ts: 1, coffee: 'Early Brew' });
+  await app.locator('#main').click();
+  await expect(app.locator('#main')).toHaveText('stop.');
+  fake.brews.push({ id: 2, ts: 2, coffee: 'Late Brew' });
+  await app.locator('#tabLog').click();
+  await expect(app.locator('#log')).not.toContainText('Late Brew');
+
+  await app.locator('#tabTimer').click();
+  await app.locator('#main').click();
+  await expect(app.locator('#main')).toHaveText('start.');
+  await app.locator('#tabLog').click();
+  await expect(app.locator('#log')).toContainText('Late Brew');
+});

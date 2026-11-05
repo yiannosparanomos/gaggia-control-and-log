@@ -31,6 +31,8 @@ Why things are the way they are. For the events behind them, see [history.md](hi
 | Stats, calendar and filtering run in the browser | The ESP32 has little memory to spare |
 | WiFi credentials in a git-ignored `secrets.h` | They stay out of the repo |
 | Shot rules live in `shot.h`, with no Arduino code | They control the pump, so they should be testable on a PC without hardware |
+| Journal reads and deletes are refused during a shot | Sending them can block `loop()` for many seconds if the phone drops off WiFi, which would delay the stops |
+| A failed WiFi update restarts the ESP32 | Otherwise a "start" tapped during the update could run when it ends, long after the tap |
 | WiFi updates never start during a shot | An update blocks `loop()`, which would also block the auto-stop and safety stop |
 | No password on WiFi updates, for now | Simple to use on a home network. Any device on the WiFi could replace the firmware, so this will be reconsidered (see `todo.md`) |
 | A failed LittleFS mount never formats the flash | A failed mount may be recoverable, and a format would erase the journal |

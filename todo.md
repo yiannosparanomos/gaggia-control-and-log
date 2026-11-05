@@ -23,6 +23,12 @@ Bugs and cleanup found while reading the code on 5 Nov 2026. Planned work is in
 
 The first upload needs the cable: `npm run flash -- --usb` in `web/`. It backs up the journal first.
 
+**Before the first upload, unplug the machine from mains and disconnect the relay's COM and NO wires.** Then:
+
+- [ ] Listen for a relay click during each restart. With the wires connected, a click there would start the pump.
+      If it clicks, don't reconnect until that's fixed.
+- [ ] Only then reconnect the wires, with the machine still unplugged, and plug it back in.
+
 - [ ] After the first upload, `npm run flash` works over WiFi.
 - [ ] Actions and settings are POST only. Start, stop, change the limit, and toggle auto stop from the phone.
 - [ ] Opening `/api/start` in a browser returns 404 and the relay doesn't click.
@@ -31,6 +37,9 @@ The first upload needs the cable: `npm run flash -- --usb` in `web/`. It backs u
 - [ ] Delete a test brew and confirm the others remain. This is the first real test of the new
       replace-by-rename, also used when saving coffees. If it fails, the app reports an error and the
       old file stays in place.
+- [ ] Opening the journal during a shot shows the old list, and it reloads when the shot ends.
+- [ ] Tap start during a WiFi update you make fail, with the relay disconnected. The ESP32 should restart, and no
+      shot should start.
 - [ ] A failed LittleFS mount no longer formats the flash, and the app shows a warning instead.
       A brand-new board needs `FORMAT_IF_MOUNT_FAILS = true` for one upload.
 
@@ -40,9 +49,11 @@ The first upload needs the cable: `npm run flash -- --usb` in `web/`. It backs u
       the repo (a local copy is git-ignored at `docs/images/carezza-1996-schematic.png`). If it's free to
       share, add it back to the end of `docs/hardware.md`.
 - [ ] Replace the Commissioner and Doto fonts eventually, then update `THIRD_PARTY_NOTICES.md`.
-- [ ] Consider a password for WiFi firmware updates. There's none for now, so any device on the WiFi could
-      replace the firmware.
-- [ ] **Flash is tight:** the firmware is 94.7% of the 1.25 MB app partition, including about 41 KB for WiFi
+- [ ] Consider a password for WiFi updates. There's none for now, so any device on the WiFi could replace the
+      firmware, or overwrite the journal with a filesystem image.
+- [ ] Move the auto-stop and safety stop into their own FreeRTOS task. Journal routes now wait until a shot is
+      over, but reloading the page during a shot could still delay the stops if the phone drops off WiFi.
+- [ ] **Flash is tight:** the firmware is 94.9% of the 1.25 MB app partition, including about 41 KB for WiFi
       updates. Growing the partition would wipe the journal. Before adding the scale or SSE, look for savings:
       replacing the fonts would help, and each weight is about 18 KB.
 

@@ -42,6 +42,7 @@ export async function startFake() {
       if (path !== '/api/status') fake.log.push(`${req.method} ${req.url}`);
       if (path === '/api/status') return json(fake.status);
       if (path === '/api/brews') {
+        if (req.method === 'GET' && fake.status.state === 'brewing') return fail(503); // like the firmware
         if (req.method === 'POST') fake.brews.push(JSON.parse(body));
         return json(req.method === 'POST' ? { ok: true } : fake.brews);
       }
@@ -56,7 +57,7 @@ export async function startFake() {
         if (req.method !== 'POST') return fail(404); // like the firmware's POST-only routes
         if (path === '/api/start') fake.status.state = 'brewing';
         if (path === '/api/stop') fake.status.state = 'done';
-        if (path === '/api/reset') fake.status.state = 'idle';
+        if (path === '/api/reset' && (fake.status.state !== 'brewing' || url.searchParams.get('confirm') === '1')) fake.status.state = 'idle';
         if (path === '/api/press') fake.status.presses++;
         if (url.searchParams.has('limit')) fake.status.limit = Number(url.searchParams.get('limit'));
         return json(fake.status);

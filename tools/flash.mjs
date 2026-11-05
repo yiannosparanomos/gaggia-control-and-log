@@ -64,6 +64,17 @@ if (dryRun) {
 const build = spawnSync('npm', ['run', 'build'], { cwd: join(root, 'web'), stdio: 'inherit', shell: process.platform === 'win32' });
 if (build.status !== 0) stop('The UI build failed.');
 
+// Compiling takes a while, and a shot could start meanwhile. A USB upload resets the ESP32, which would
+// leave the pump running with no stops, so compile first and check again just before uploading.
+const buildArgs = usb ? ['run'] : ['run', '-e', 'esp32dev_ota', '--upload-port', new URL(host).hostname];
+if (!pio(buildArgs, join(root, 'firmware'))) stop(`The firmware did not compile. Your backup is at ${file}`);
+try {
+  const again = await getEither('/status');
+  if (again.data?.state !== 'idle' && again.data?.state !== 'done') stop(`Can't confirm the ESP32 is free. Your backup is at ${file}`);
+} catch (e) {
+  stop(`Can't confirm the ESP32 is free. (${e.message}) Your backup is at ${file}`);
+}
+
 if (usb) console.log('\nIf it hangs at "Connecting...", hold the BOOT button until the upload starts.');
 const args = usb
   ? ['run', '-t', 'upload']

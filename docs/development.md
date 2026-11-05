@@ -75,9 +75,10 @@ It does the following, and uploads nothing if an earlier step fails:
 
 1. Checks the ESP32 is reachable and isn't brewing.
 2. Saves the journal to `backups/`, which git ignores.
-3. Builds the UI into the firmware.
-4. Uploads the firmware. This never touches the journal's storage.
-5. Waits for the restart and confirms the journal has the same number of brews.
+3. Builds the UI into the firmware, and compiles it.
+4. Checks again that the ESP32 isn't brewing.
+5. Uploads the firmware. This never touches the journal's storage.
+6. Waits for the restart and confirms the journal has the same number of brews.
 
 `npm run flash -- --dry-run` does only the first two steps, so it's also a quick way to take a backup.
 

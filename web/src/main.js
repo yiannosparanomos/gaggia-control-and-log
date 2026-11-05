@@ -54,6 +54,7 @@ import './style.css';
   function simCall(path, body) {
     const u = new URL(path, 'http://esp'), q = u.searchParams;
     const p = u.pathname.replace(/^\/api/, '');
+    if (sim.state === 'brewing' && (p === '/brews/delete' || (p === '/brews' && !body))) throw new Error('HTTP 503');
     if (p === '/brews') { if (body) { sim.brews.push(JSON.parse(body)); return { ok: true }; } return sim.brews.slice(); }
     if (p === '/brews/delete') { sim.brews = sim.brews.filter((b) => String(b.id) !== q.get('id')); return { ok: true }; }
     if (p === '/coffees') { if (body) { sim.coffees = JSON.parse(body); return { ok: true }; } return sim.coffees.slice(); }
@@ -74,8 +75,10 @@ import './style.css';
     return r.json();
   }
   async function api(path, isAction) {
+    const wasBrewing = S.state === 'brewing';
     try { S = await request(path, isAction ? ' ' : undefined); statusAt = performance.now(); online = true; } catch (e) { online = false; }
     render();
+    if (wasBrewing && S.state !== 'brewing') loadData();   // the ESP32 refuses journal reads during a shot
   }
   const action = (path) => api(path, true);
   async function poll() { if (busy) return; busy = true; try { await api('/api/status'); } finally { busy = false; } }
@@ -159,14 +162,14 @@ import './style.css';
     let timer = null;
     const disarm = () => { clearTimeout(timer); timer = null; btn.textContent = label; btn.classList.remove('red'); };
     btn.addEventListener('click', () => {
-      if (timer) { disarm(); run(); return; }
-      if (!needsAsking()) { run(); return; }
+      if (timer) { disarm(); run(true); return; }
+      if (!needsAsking()) { run(false); return; }
       btn.textContent = question; btn.classList.add('red');
       timer = setTimeout(disarm, 4000);
     });
   }
   twoTap($('press'), 'only if the machine is running. press?', () => true, () => action('/api/press'));
-  twoTap($('reset'), 'only if the machine has stopped. reset?', () => S.state === 'brewing', () => action('/api/reset?confirm=1'));
+  twoTap($('reset'), 'only if the machine has stopped. reset?', () => S.state === 'brewing', (asked) => action(asked ? '/api/reset?confirm=1' : '/api/reset'));
 
   // ---------- tabs ----------
   const VIEWS = { timer: ['viewTimer', 'tabTimer'], log: ['viewLog', 'tabLog'], beans: ['viewBeans', 'tabBeans'] };

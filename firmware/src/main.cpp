@@ -140,6 +140,22 @@ void handleSet() {
 const char* BREWS_FILE   = "/brews.jsonl";
 const char* COFFEES_FILE = "/coffees.json";
 
+// Sending the journal can block for many seconds if the phone drops off WiFi, and loop() can't run the
+// auto and safety stops meanwhile. So long journal work waits until the shot is over.
+bool refuseDuringShot() {
+  if (shot.state != BREWING) return false;
+  server.send(503, "text/plain", "brewing");
+  return true;
+}
+
+size_t fileSize(const char* path) {
+  File f = LittleFS.open(path, "r");
+  if (!f) return 0;
+  size_t size = f.size();
+  f.close();
+  return size;
+}
+
 // Swaps a finished temp file over the real one. The real file is untouched until the temp file is
 // proven complete, and LittleFS's rename replaces it in one step, so a power cut leaves old or new, never neither.
 bool commitFile(const char* tmp, const char* path, size_t expectedSize) {
@@ -180,6 +196,7 @@ String readCoffees() {
 }
 
 void handleBrewsGet() {
+  if (refuseDuringShot()) return;
   server.sendHeader("Cache-Control", "no-store");
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "application/json", "");
@@ -207,6 +224,7 @@ void handleCoffeesPost() {
 
 // Whole journal + coffees as one downloadable file
 void handleBackup() {
+  if (refuseDuringShot()) return;
   server.sendHeader("Content-Disposition", "attachment; filename=\"gaggia-backup.json\"");
   server.sendHeader("Cache-Control", "no-store");
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
@@ -228,15 +246,21 @@ void handleBrewsPost() {
     server.send(400, "text/plain", "bad brew");
     return;
   }
+  size_t before = fileSize(BREWS_FILE);
   File f = LittleFS.open(BREWS_FILE, "a");
   if (!f) { server.send(500, "text/plain", "storage error"); return; }
   f.println(body);
   f.close();
+  if (fileSize(BREWS_FILE) != before + body.length() + 2) {   // +2 is the line ending
+    server.send(500, "text/plain", "storage error");
+    return;
+  }
   Serial.println(">> Brew saved");
   server.send(200, "application/json", "{\"ok\":true}");
 }
 
 void handleBrewsDelete() {
+  if (refuseDuringShot()) return;
   if (!server.hasArg("id")) { server.send(400, "text/plain", "missing id"); return; }
   String prefix = "{\"id\":" + server.arg("id") + ",";
   const char* tmp = "/brews.tmp";
@@ -258,6 +282,7 @@ void handleBrewsDelete() {
     if (n != l.length() + 2) { complete = false; break; }   // flash full: +2 is the line ending
     written += n;
   }
+  if (in.position() != in.size()) complete = false;   // a short read must not shrink the journal
   in.close(); out.close();
   if (!complete) LittleFS.remove(tmp);
   if (!complete || !commitFile(tmp, BREWS_FILE, written)) {
@@ -269,13 +294,13 @@ void handleBrewsDelete() {
 
 // ============== SETUP ==============
 void setup() {
+  pinMode(RELAY_PIN, OUTPUT);      // first, so the relay input floats for as short a time as possible
+  digitalWrite(RELAY_PIN, HIGH);   // relay off
+  pinMode(18, INPUT);              // GPIO18 disabled (bridged to GPIO19)
+
   Serial.begin(115200);
   delay(1000);
   Serial.println("\n=== Gaggia ESP32 shot timer ===");
-
-  pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, HIGH);   // relay off
-  pinMode(18, INPUT);              // GPIO18 disabled (bridged to GPIO19)
 
   prefs.begin("espresso", false);
   shot.limitS   = prefs.getInt("limit", 30);
@@ -301,7 +326,10 @@ void setup() {
 
   // WiFi firmware updates. No password for now: see todo.md.
   ArduinoOTA.setHostname(hostname);
-  ArduinoOTA.setMdnsEnabled(false);   // MDNS.begin above already did this
+  ArduinoOTA.setMdnsEnabled(false);   // MDNS.begin above already started mDNS
+  // A "start" tapped during a failed update could otherwise run when it ends, long after the tap.
+  // Restarting drops it, and updates never run during a shot, so this can't interrupt one.
+  ArduinoOTA.onError([](ota_error_t) { ESP.restart(); });
   ArduinoOTA.begin();
 
   server.on("/", handleRoot);

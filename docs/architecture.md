@@ -130,7 +130,10 @@ flowchart LR
 - **Shot rules** decide when the relay may be pressed, including the 1 s cooldown and the time limits. They
   have no Arduino code, so they can be tested on a PC. `main.cpp` supplies the clock and clicks the relay.
 - **`loop()`** checks the limits continuously on the ESP32, so a shot still stops if the phone sleeps.
-- **WiFi updates** only run outside a shot, because an update blocks `loop()` and so would block the stops.
+- **WiFi updates** only run outside a shot, because an update blocks `loop()` and so would block the stops. A
+  failed update restarts the ESP32, so a "start" tapped during it can't run later.
+- **Journal reads and deletes** are refused during a shot, because sending them can block `loop()` for many
+  seconds if the phone drops off WiFi.
 - **Journal storage** writes a replacement to a temp file first, checks its size, then swaps it in. A
   failure leaves the old file in place.
 
