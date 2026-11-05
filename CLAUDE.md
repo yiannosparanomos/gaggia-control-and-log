@@ -17,7 +17,7 @@ before any non-trivial task. Known bugs: `todo.md`. Planned work: `docs/roadmap.
 - `web/` Vite project, plain HTML/CSS/JS. `index.html`, `src/main.js`, `src/style.css`, `src/fonts.css`.
   Built into ONE self-contained `index.html` (vite-plugin-singlefile), then gzipped into the firmware.
 - `tools/embed.mjs` dist/index.html → gzip → C byte array.
-- `docs/` hardware, development notes, decisions, roadmap, history, images/, legacy/ (old scale code, not built).
+- `docs/` start at `docs/README.md`. Includes hardware, architecture, API, development notes, decisions, roadmap, history, images/, legacy/ (old scale code, not built).
 - `todo.md` known bugs and cleanup.
 
 ## Commands
@@ -34,7 +34,7 @@ before any non-trivial task. Known bugs: `todo.md`. Planned work: `docs/roadmap.
 - **GPIO18 is solder-bridged to GPIO19.** Keep `pinMode(18, INPUT)` and never use GPIO18.
 - HX711 load cell amp (not used by current code, may be wired): DT → GPIO4, SCK → GPIO5, VCC → 3.3V.
   Load cell calibration factor last measured: -756.8 (A+/A- swapped, corrected in code).
-- Relay press = 500 ms LOW, minimum 1000 ms between presses. Safety stop at 60 s always on.
+- Relay press = 500 ms LOW, minimum 1000 ms between presses. Safety stop at 60 s on every timed shot.
 - Upload sometimes needs the BOOT button held during "Connecting...". The reset button is labelled RST.
 
 ## Safety rules
@@ -45,32 +45,14 @@ before any non-trivial task. Known bugs: `todo.md`. Planned work: `docs/roadmap.
 
 ## Data on the ESP32 (do not lose it)
 - LittleFS on the default partition (`default.csv`, ~1.4 MB):
-  - `/brews.jsonl` one brew per line, JSON, must start with `{"id":`. Append-only; delete rewrites the file.
-  - `/coffees.json` whole array of coffees `{id,name,roaster,roasted,week}`.
-- NVS (Preferences, namespace `espresso`): `limit` (s), `auto` (bool).
+  - `/brews.jsonl` and `/coffees.json`, plus settings in NVS. Formats: `docs/api.md`.
 - **Never** run `pio run -t uploadfs`, `pio run -t erase`, or change the partition table: all wipe
   the journal. If a change truly needs it, tell the user to download a backup first (`/api/backup`).
 - Heavy computation (stats, calendar, filtering) happens in the browser, not on the ESP32.
 
-## Current API (all JSON)
-| Method | Path | Notes |
-|---|---|---|
-| GET | `/` | the app (gzipped HTML from web_assets.h) |
-| GET | `/api/status` | `{state: idle|brewing|done, elapsed ms, limit, auto, reason, presses, last:[{t,r}]}` |
-| POST | `/api/start`, `/api/stop` | start or stop a timed shot; return status |
-| POST | `/api/press` | raw relay press, ignored during a timed shot; return status |
-| POST | `/api/reset` | screen state only, no relay. During a timed shot needs `?confirm=1`; return status |
-| POST | `/api/set?limit=30&auto=1` | settings; return status |
-| GET/POST | `/api/brews` | list (array) / append one brew (body = JSON, text/plain) |
-| POST | `/api/brews/delete?id=` | delete one brew |
-| GET/POST | `/api/coffees` | read / replace the whole coffees array |
-| GET | `/api/backup` | download `{version, brews, coffees}` |
-
-No authentication, by decision: the API trusts the home network. Known bugs: `todo.md`.
-
-Planned: move to a cleaner REST design (PUT /api/settings, DELETE /api/brews/{id}),
-ArduinoJson for parsing, SSE for the live timer, an OpenAPI spec, cloud sync, an MCP server on the PC.
-Change the API in firmware AND `web/src/main.js` (including the `?sim` simulator) together.
+## API
+Routes and stored data: `docs/api.md`. No authentication, by decision: the API trusts the home network.
+Change the API in firmware AND `web/src/main.js` (including the `?sim` simulator) AND `docs/api.md` together.
 
 ## UI conventions
 - English only. Lowercase labels ending with a full stop ("start.", "log it.").
