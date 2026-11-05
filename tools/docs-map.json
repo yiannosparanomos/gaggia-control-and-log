@@ -1,0 +1,10 @@
+{
+  "ignore": ["firmware/src/web_assets.h", "firmware/src/secrets.example.h"],
+  "rules": [
+    { "paths": ["firmware/src/"], "docs": ["docs/api.md", "docs/architecture.md"] },
+    { "paths": ["web/src/main.js", "web/index.html"], "docs": ["docs/api.md", "docs/architecture.md"] },
+    { "paths": ["web/public/"], "docs": ["docs/architecture.md"] },
+    { "paths": ["firmware/platformio.ini", "tools/", "web/package.json", "web/tests/"], "docs": ["docs/development.md"] },
+    { "paths": [".github/", ".githooks/", ".claude/"], "docs": ["docs/architecture.md"] }
+  ]
+}

@@ -19,6 +19,7 @@ AI tokens.
 |---|---|
 | No private files tracked | `secrets.h`, `CLAUDE.local.md` or journal backups in git |
 | Build tool tests | Mistakes in the flash command's safety checks |
+| Docs match the code | An API table that differs from the firmware, and broken links |
 | UI builds, up to date, under 90 KB gzipped | A broken build, firmware shipping an old UI, a page that's too big |
 | Browser tests | Buttons sending wrong requests, and data-loss bugs. A real browser clicks through the app against a fake ESP32, so this tests the app rather than the C++ routes |
 | Shot logic tests | Wrong limits, cooldown, or safety stop. They run on the PC |
@@ -37,6 +38,19 @@ The first run also needs a browser for the tests: `npx playwright install chromi
 screenshots to `web/test-results/ui/`. It isn't required for merging.
 
 Nothing here runs the C++ routes or flash storage, so check those on the real ESP32 after a change to them.
+
+## Keeping docs current
+
+Each commit runs a check, set up automatically by `npm install` in `web/`. If you change code listed in
+[`tools/docs-map.json`](../tools/docs-map.json) without changing one of its docs, the commit is blocked. Update
+the doc, or if none needs changing, say why in the commit message:
+
+```text
+Docs-Checked: comment change only
+```
+
+Git hooks only run on your own PC, so CI repeats this check on pull requests. It can tell that a doc changed,
+but not that it's right, so read the diff too. In Claude Code, the `docs-keeper` subagent can make the update.
 
 ## Building
 

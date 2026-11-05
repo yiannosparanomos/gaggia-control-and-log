@@ -31,6 +31,10 @@ const steps = {
     if (!run('node', ['--test', '../tools/'], web)) fail('Build tool tests failed.');
   },
 
+  'docs match the code'() {
+    if (!run('node', ['../tools/check-docs.mjs'], web)) fail('The docs check failed.');
+  },
+
   'UI builds, is up to date in the firmware, and fits'() {
     if (!run('npx', ['vite', 'build', '--logLevel', 'warn'], web)) fail('The UI build failed.');
     const header = readFileSync(join(firmware, 'src', 'web_assets.h'), 'utf8');

@@ -51,3 +51,5 @@ written up with photos in [hardware.md](hardware.md#the-repair-onoff-button-stop
 - A read-through found the bugs listed in [`todo.md`](../todo.md). Fixed so far: actions moved to POST,
   and protections added against losing coffees or journal data.
 - The repo was made public, with no API authentication by decision.
+- Added architecture docs, tests, CI, WiFi updates, a flash command with automatic backup, a live demo, and
+  checks that keep the docs current.

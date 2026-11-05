@@ -52,6 +52,16 @@ Why things are the way they are. For the events behind them, see [history.md](hi
 | The live demo is a separate page in GitHub Pages | Visitors can try the app with no hardware, and it adds almost nothing to the firmware |
 | The same `npm run check` runs locally and in CI | One set of tests, so nothing gets tested twice in different ways |
 
+## AI tooling
+
+| Decision | Why |
+|---|---|
+| `CLAUDE.md` is public and holds project rules only. Personal notes stay in git-ignored `CLAUDE.local.md` | The repo is public |
+| Rules that matter are enforced by hooks, not just written down | Instructions can be ignored or forgotten |
+| The docs check is a git hook with no AI, and a subagent runs only when it flags something | It catches your commits as well as Claude's, costs no tokens on most commits, and never needs to load every doc |
+| No `/verify` skill | `npm run check` already does this, and Claude can run it |
+| No Claude GitHub Action for now | Not needed yet for a project with one developer |
+
 ## Design
 
 Light and monochrome with one signal red, dot-matrix numbers, English only, and lowercase labels

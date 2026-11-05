@@ -19,6 +19,8 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # the docs check compares a pull request with its base
       - uses: actions/setup-node@v7
         with:
           node-version: 26
@@ -38,6 +40,9 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run check
+      - name: Changed code came with its docs
+        if: github.event_name == 'pull_request'
+        run: node ../tools/check-docs.mjs --range ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       - name: Phone layout screenshots (optional, never fails the build)
         run: npm run test:ui
         continue-on-error: true

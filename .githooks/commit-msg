@@ -1,0 +1,3 @@
+#!/bin/sh
+# Blocks a commit that changes code without its docs. Set up automatically by `npm install` in web/.
+exec node tools/check-docs.mjs --commit-msg "$1"

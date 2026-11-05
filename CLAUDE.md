@@ -21,6 +21,7 @@ before any non-trivial task. Known bugs: `todo.md`. Planned work: `docs/roadmap.
 - `web/tests/` browser tests against a fake ESP32.
 - `web/public/demo.html` the GitHub Pages demo. Not in the firmware.
 - `.github/workflows/` CI and the demo deploy. No self-hosted runners, ever.
+- `.claude/` the command guard hook and two subagents. `.githooks/` and `tools/check-docs.mjs` the docs check.
 - `docs/` start at `docs/README.md`. Includes hardware, architecture, API, development notes, decisions, roadmap, history, images/, legacy/ (old scale code, not built).
 - `todo.md` known bugs and cleanup.
 
@@ -32,6 +33,13 @@ Run in `web/`. Details: `docs/development.md`.
 - **Verify a change: `npm run check` must pass.** Report the firmware size line.
 - Optional phone layout test: `npm run test:ui`
 - Upload: `npm run flash` (WiFi) or `npm run flash -- --usb`. Only the owner decides when to flash.
+
+## Before committing
+- Any change to firmware, `tools/flash.mjs` or the app's start, stop, press or reset controls: run the
+  `safety-reviewer` subagent.
+- If the commit-msg hook reports stale docs: run the `docs-keeper` subagent. Only add
+  `Docs-Checked: <reason>` when no doc really needs changing. Never skip the hook.
+- How this tooling fits together: `docs/architecture.md`, section 6.
 
 ## Hardware (do not change without asking)
 - Relay module (active LOW): IN → **GPIO19**, VCC → VIN (5V), GND → GND. COM + NO → the two PB1 pads

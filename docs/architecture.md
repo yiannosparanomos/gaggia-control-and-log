@@ -11,6 +11,7 @@ how changes reach the machine, which C4 doesn't describe.
 | [3. Components](#3-components) | What's inside each part? |
 | [4. How a shot runs](#4-how-a-shot-runs) | What happens, step by step? |
 | [5. Delivery](#5-delivery) | How does a change get tested and reach the machine? |
+| [6. AI tooling](#6-ai-tooling) | How do Claude Code and its guards act on this repo? |
 
 ## 1. Context
 
@@ -89,7 +90,7 @@ flowchart LR
   subgraph main["firmware/src/main.cpp"]
     routes["<b>Routes</b><br/>server.on(...)"]
     loopfn["<b>loop()</b><br/>auto-stop and safety stop"]
-    press["<b>Relay driver</b><br/>pressButton()"]
+    press["<b>Relay driver</b><br/>clickRelay()"]
     journal["<b>Journal storage</b><br/>append, replace, stream"]
     settings["<b>Settings</b><br/>Preferences"]
     ota["<b>WiFi updates</b><br/>ArduinoOTA, never during a shot"]
@@ -227,7 +228,7 @@ command you choose to run on your own PC.
 ```mermaid
 flowchart LR
   edit["<b>Edit</b>"] --> check["<b>npm run check</b><br/>the same checks as CI"]
-  check --> commit["<b>Commit</b>"]
+  check --> commit["<b>Commit</b><br/>docs check runs here"]
   commit --> ci["<b>GitHub CI</b><br/>npm run check"]
   ci --> main["<b>main</b>"]
   main --> pages["<b>GitHub Pages</b><br/>simulated demo"]
@@ -253,3 +254,53 @@ flowchart LR
 CI runs on GitHub's own runners with read-only access. Never add a self-hosted runner: on a public repo, a
 stranger's pull request could run code on that PC, inside your home network. See
 [decisions.md](decisions.md#delivery).
+
+## 6. AI tooling
+
+This repo is developed with [Claude Code](https://code.claude.com/docs). None of this runs on the machine:
+it only acts on the repo during development. Instructions alone can be ignored, so anything that really
+matters is enforced by a check.
+
+```mermaid
+flowchart TB
+  rules["<b>CLAUDE.md</b><br/>public project rules"]
+  local["<b>CLAUDE.local.md</b><br/>personal, git-ignored"]
+  claude["<b>Claude Code</b>"]
+  guard{{"<b>guard.mjs hook</b><br/>before every command"}}
+  agents["<b>Subagents</b><br/>safety-reviewer, docs-keeper"]
+  repo["<b>Repo files</b>"]
+  gitcheck{{"<b>commit-msg hook</b><br/>docs check, no AI"}}
+  history[("<b>Git history</b>")]
+  you(["<b>You</b>"])
+
+  rules --> claude
+  local --> claude
+  claude -- "runs commands" --> guard
+  guard -- "if allowed" --> repo
+  claude -- "delegates reviews" --> agents
+  agents -- "report, or fix docs" --> repo
+  repo -- "git commit" --> gitcheck
+  you -- "git commit" --> gitcheck
+  gitcheck -- "if docs are current" --> history
+
+  classDef code fill:#ffffff,stroke:#111111,color:#111111
+  classDef private fill:#f3f3f0,stroke:#77776f,color:#111111
+  classDef enforce fill:#d71921,stroke:#d71921,color:#ffffff
+  classDef actor fill:#111111,stroke:#111111,color:#ffffff
+  class rules,agents,repo code
+  class local,history private
+  class guard,gitcheck enforce
+  class claude,you actor
+```
+
+| Piece | Where | What it does | Uses AI tokens? |
+|---|---|---|---|
+| Project rules | [`CLAUDE.md`](../CLAUDE.md) | Tells Claude the safety rules and commands. Advice, not enforcement | Loaded each session |
+| Personal notes | `CLAUDE.local.md` | Your preferences. Never committed | Loaded each session |
+| Command guard | [`.claude/hooks/guard.mjs`](../.claude/hooks/guard.mjs) | Blocks Claude from wiping the journal, staging private files or skipping git hooks. Doesn't cover commands you type | No |
+| Docs check | [`tools/check-docs.mjs`](../tools/check-docs.mjs) | Compares the API table with the firmware, checks links, and blocks code changes that arrive without their docs. Covers your commits and Claude's | No |
+| Docs map | [`tools/docs-map.json`](../tools/docs-map.json) | Lists which code affects which docs | No |
+| Safety reviewer | [`.claude/agents/safety-reviewer.md`](../.claude/agents/safety-reviewer.md) | Read-only review of firmware changes against the pump, relay and journal rules | Yes, when used |
+| Docs keeper | [`.claude/agents/docs-keeper.md`](../.claude/agents/docs-keeper.md) | Updates the docs when the docs check flags a change, reading only the diff and the mapped docs | Yes, when used |
+
+The docs check can tell that a doc changed, but not that it's right. That's why the docs keeper exists.
