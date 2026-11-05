@@ -108,7 +108,7 @@
   .btn.red { background: var(--signal); color: #ffffff; }
   .btn.small { padding: 8px 14px; font-size: 0.85rem; }
   .btn:disabled { opacity: 0.35; cursor: default; }
-  .linkbtn { background: none; border: none; color: var(--soft); font-size: 0.8rem; text-decoration: underline; cursor: pointer; padding: 0; align-self: flex-start; }
+  .linkbtn { background: none; border: none; color: var(--soft); font-size: 0.8rem; text-decoration: underline; cursor: pointer; padding: 4px 0; align-self: flex-start; }
 
   .list { list-style: none; margin: 0; padding: 0; }
   .list li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--hair); font-size: 0.9rem; }

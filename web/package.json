@@ -5,9 +5,13 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build && node ../tools/embed.mjs",
-    "preview": "vite preview --host"
+    "preview": "vite preview --host",
+    "check": "node ../tools/check.mjs",
+    "test:e2e": "playwright test --project=e2e",
+    "test:ui": "playwright test --project=ui"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "vite": "^6.3.5",
     "vite-plugin-singlefile": "^2.2.0"
   },
