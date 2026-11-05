@@ -80,6 +80,14 @@ With the cable:
 - "Hard resetting via RTS pin..." at the end is normal. It isn't stuck.
 - The board's reset button is labelled **RST**.
 
+## CI and the demo
+
+GitHub Actions runs `npm run check` on every pull request and on `main`. A separate workflow publishes the
+simulated demo to GitHub Pages. To turn the demo on, once: in the repo's **Settings > Pages**, set **Source** to
+**GitHub Actions**. To require passing checks before merging, add a branch protection rule for `main`.
+
+To preview the demo locally, run `npm run dev` and open `http://localhost:5173/demo.html`.
+
 ## Network
 
 - The ESP32 is at `http://192.168.2.6` on the home WiFi, and that's the default target for `npm run dev`.

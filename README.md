@@ -8,7 +8,10 @@ at a time limit, and keep a brew journal, all from your home WiFi with no cloud 
 > machine before touching anything inside it. The ESP32 connects only through a relay's dry contacts. Do
 > this at your own risk: the software comes with no warranty, and the changes may void the machine's.
 
-<img src="docs/images/r8-repair-10k.jpg" width="480" alt="The Gaggia button board on the bench">
+**[Try the demo in your browser](https://yiannosparanomos.github.io/gaggia-control-and-log/)**: the real app beside a
+simulated machine, with no hardware needed.
+
+<a href="https://yiannosparanomos.github.io/gaggia-control-and-log/"><img src="docs/images/demo.png" width="720" alt="The phone app running a shot beside a drawing of the machine pouring into a cup"></a>
 
 ## What it does
 
@@ -39,7 +42,7 @@ To build and upload the firmware, see [docs/development.md](docs/development.md)
 | [`docs/`](docs/README.md) | Start here: hardware, architecture, API, development, decisions, roadmap |
 | [`firmware/`](firmware/) | The C++ running on the ESP32 (PlatformIO, Arduino framework) |
 | [`web/`](web/) | The phone app (plain HTML, CSS and JS, built with Vite and embedded in the firmware) |
-| [`tools/`](tools/) | Build helpers |
+| [`tools/`](tools/) | Checks, firmware upload and build helpers |
 | [`todo.md`](todo.md) | Known bugs and next steps |
 
 ## Licence

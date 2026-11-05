@@ -1,0 +1,53 @@
+# Runs the same `npm run check` you run locally, on every pull request and on main.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Read-only, and GitHub withholds secrets from pull requests from forks.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Cache PlatformIO
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.platformio
+            firmware/.pio
+          key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+      - run: pip install platformio
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run check
+      - name: Phone layout screenshots (optional, never fails the build)
+        run: npm run test:ui
+        continue-on-error: true
+      - uses: actions/upload-artifact@v7
+        with:
+          name: phone-screenshots
+          path: web/test-results/ui/
+          retention-days: 14
+      - uses: actions/upload-artifact@v7
+        with:
+          name: firmware
+          path: firmware/.pio/build/esp32dev/firmware.bin
+          retention-days: 14

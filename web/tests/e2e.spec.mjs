@@ -138,3 +138,24 @@ test('the simulator follows the same rules with no ESP32', async ({ page, fake }
   expect(fake.log.filter((l) => l.includes('/api/start'))).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test('the demo page shows the machine following the app', async ({ page, fake }) => {
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(fake.url + '/demo.html');
+  const app = page.frameLocator('#app');
+  const machine = page.locator('#machine');
+  await expect(app.locator('#simBanner')).toBeVisible();
+  await expect(machine).toHaveAttribute('data-pump', 'off');
+
+  await app.locator('#main').click();
+  await expect(machine).toHaveAttribute('data-pump', 'on');
+  await expect(machine).toHaveAttribute('data-relay', 'on');
+  await expect(page.locator('#pumpText')).toHaveText('pump on.');
+  await expect(machine).toHaveAttribute('data-relay', 'off', { timeout: 2000 });
+
+  await page.waitForTimeout(1100); // the simulator also enforces the 1 s cooldown
+  await app.locator('#main').click();
+  await expect(machine).toHaveAttribute('data-pump', 'off');
+  expect(errors).toEqual([]);
+});

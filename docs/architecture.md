@@ -1,7 +1,8 @@
 # Architecture
 
 This page starts with the big picture and zooms in. Stop reading as soon as you know enough. The product
-views follow the [C4 model](https://c4model.com): context, containers, then components.
+views follow the [C4 model](https://c4model.com): context, containers, then components. Later sections cover
+how changes reach the machine, which C4 doesn't describe.
 
 | Section | Answers |
 |---|---|
@@ -9,6 +10,7 @@ views follow the [C4 model](https://c4model.com): context, containers, then comp
 | [2. Containers](#2-containers) | What are the main parts, and how do they talk? |
 | [3. Components](#3-components) | What's inside each part? |
 | [4. How a shot runs](#4-how-a-shot-runs) | What happens, step by step? |
+| [5. Delivery](#5-delivery) | How does a change get tested and reach the machine? |
 
 ## 1. Context
 
@@ -216,3 +218,38 @@ stateDiagram-v2
 These states are what the firmware assumes, not what it measures, because nothing reports the machine's
 real state. If someone uses the machine's own button, they can disagree. See
 [development.md](development.md#the-esp32-cant-see-the-machine).
+
+## 5. Delivery
+
+Nothing reaches the machine automatically. GitHub has no route to your home network, and flashing is always a
+command you choose to run on your own PC.
+
+```mermaid
+flowchart LR
+  edit["<b>Edit</b>"] --> check["<b>npm run check</b><br/>the same checks as CI"]
+  check --> commit["<b>Commit</b>"]
+  commit --> ci["<b>GitHub CI</b><br/>npm run check"]
+  ci --> main["<b>main</b>"]
+  main --> pages["<b>GitHub Pages</b><br/>simulated demo"]
+  main --> flash["<b>npm run flash</b><br/>you run this, on your PC"]
+  flash --> backup[("<b>Journal backup</b><br/>in backups/")]
+  flash --> esp["<b>ESP32</b><br/>over WiFi or USB"]
+
+  classDef step fill:#ffffff,stroke:#111111,color:#111111
+  classDef cloud fill:#f3f3f0,stroke:#77776f,color:#111111
+  classDef human fill:#d71921,stroke:#d71921,color:#ffffff
+  classDef device fill:#111111,stroke:#111111,color:#ffffff
+  class edit,check,commit,main step
+  class ci,pages,backup cloud
+  class flash human
+  class esp device
+```
+
+| Workflow | Runs on | Does |
+|---|---|---|
+| [`ci.yml`](../.github/workflows/ci.yml) | Pull requests and `main` | Runs `npm run check`, then saves phone screenshots and `firmware.bin` |
+| [`pages.yml`](../.github/workflows/pages.yml) | `main`, when `web/` changes | Publishes [`web/public/demo.html`](../web/public/demo.html) and the app in `?sim` mode |
+
+CI runs on GitHub's own runners with read-only access. Never add a self-hosted runner: on a public repo, a
+stranger's pull request could run code on that PC, inside your home network. See
+[decisions.md](decisions.md#delivery).

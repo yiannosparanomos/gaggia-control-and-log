@@ -42,6 +42,7 @@ import './style.css';
       mk(5, 'Kenya AA', '12', 18, 36, 27.0, { acid: 4, sweet: 3, bitter: 2, body: 3, finish: 3, overall: 3 }, ['red berries'], ''),
     ];
   }
+  if (SIM) window.gaggiaSim = sim;   // lets the GitHub Pages demo animate the machine
   function simElapsed() { return sim.state === 'brewing' ? performance.now() - sim.start : sim.state === 'done' ? sim.stop - sim.start : 0; }
   function simCanPress() { return performance.now() - sim.lastPress >= 1000; }
   function simPress() { sim.lastPress = performance.now(); sim.presses++; }

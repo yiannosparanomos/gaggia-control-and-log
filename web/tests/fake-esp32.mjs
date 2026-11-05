@@ -35,9 +35,9 @@ export async function startFake() {
         res.statusCode = code;
         res.end();
       };
-      if (path === '/') {
+      if (path === '/' || path === '/index.html' || path === '/demo.html') {
         res.setHeader('Content-Type', 'text/html');
-        return res.end(readFileSync(join(dist, 'index.html')));
+        return res.end(readFileSync(join(dist, path === '/demo.html' ? 'demo.html' : 'index.html')));
       }
       if (path !== '/api/status') fake.log.push(`${req.method} ${req.url}`);
       if (path === '/api/status') return json(fake.status);

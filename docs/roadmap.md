@@ -9,6 +9,7 @@ Known bugs are in [`todo.md`](../todo.md). This page covers status and planned w
 | Firmware | Start and stop through the relay, auto-stop at 5–60 s, 60 s safety stop, journal and coffees on LittleFS. The current code compiles with PlatformIO but hasn't been uploaded yet, so it hasn't run on a real ESP32. The ESP32 still runs the earlier Arduino IDE build, which uses the old GET API |
 | Web app | **timer.**, **journal.** (list and calendar) and **coffees.** tabs, a log form with six taste scales, and backup and restore |
 | Relay and machine | COM and NO wired to PB1 and bench-tested clicking. A real shot through the machine still needs confirming |
+| Demo | The app beside a simulated machine, published to GitHub Pages from `main` |
 | Scale | Worked in April 2026 with a stop at 40 g. Not in the current firmware |
 
 ## Planned work

@@ -43,6 +43,15 @@ Why things are the way they are. For the events behind them, see [history.md](hi
 | Actions and settings are POST only | Link previews and browser prefetches can't press the relay |
 | No authentication | The API trusts the home network. Any device on the WiFi, or a web page open on one, can still send a POST. Accepted for this project |
 
+## Delivery
+
+| Decision | Why |
+|---|---|
+| Flashing is always a command someone runs by hand | The ESP32 holds the journal and controls a pump |
+| No self-hosted CI runners | On a public repo, code from a pull request could run on a PC inside the home network, where the API has no authentication |
+| The live demo is a separate page in GitHub Pages | Visitors can try the app with no hardware, and it adds almost nothing to the firmware |
+| The same `npm run check` runs locally and in CI | One set of tests, so nothing gets tested twice in different ways |
+
 ## Design
 
 Light and monochrome with one signal red, dot-matrix numbers, English only, and lowercase labels

@@ -19,6 +19,8 @@ before any non-trivial task. Known bugs: `todo.md`. Planned work: `docs/roadmap.
 - `firmware/src/shot.h` the shot rules, with no Arduino code. Tests: `firmware/test/`.
 - `tools/embed.mjs` dist/index.html → gzip → C byte array. `tools/check.mjs` runs all checks. `tools/flash.mjs` backs up and uploads.
 - `web/tests/` browser tests against a fake ESP32.
+- `web/public/demo.html` the GitHub Pages demo. Not in the firmware.
+- `.github/workflows/` CI and the demo deploy. No self-hosted runners, ever.
 - `docs/` start at `docs/README.md`. Includes hardware, architecture, API, development notes, decisions, roadmap, history, images/, legacy/ (old scale code, not built).
 - `todo.md` known bugs and cleanup.
 
