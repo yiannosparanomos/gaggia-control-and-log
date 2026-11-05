@@ -77,8 +77,8 @@ would wipe the journal. See [decisions.md](decisions.md#software).
 
 ### Firmware
 
-Everything is in [`firmware/src/main.cpp`](../firmware/src/main.cpp). For the exact routes, see
-[api.md](api.md).
+The code is in [`main.cpp`](../firmware/src/main.cpp) and [`shot.h`](../firmware/src/shot.h). For the exact
+routes, see [api.md](api.md).
 
 ```mermaid
 flowchart LR
@@ -86,11 +86,15 @@ flowchart LR
 
   subgraph main["firmware/src/main.cpp"]
     routes["<b>Routes</b><br/>server.on(...)"]
-    shot["<b>Shot logic</b><br/>state, cooldown, limits"]
     loopfn["<b>loop()</b><br/>auto-stop and safety stop"]
     press["<b>Relay driver</b><br/>pressButton()"]
     journal["<b>Journal storage</b><br/>append, replace, stream"]
     settings["<b>Settings</b><br/>Preferences"]
+    ota["<b>WiFi updates</b><br/>ArduinoOTA, never during a shot"]
+  end
+
+  subgraph header["firmware/src/shot.h"]
+    shot["<b>Shot rules</b><br/>state, cooldown, limits<br/>no Arduino code"]
   end
 
   gpio(["GPIO19"])
@@ -106,6 +110,7 @@ flowchart LR
   press --> gpio
   journal --> files
   settings --> prefs
+  loopfn --> ota
 
   classDef edge fill:#111111,stroke:#111111,color:#ffffff
   classDef code fill:#ffffff,stroke:#111111,color:#111111
@@ -113,14 +118,16 @@ flowchart LR
   classDef store fill:#f3f3f0,stroke:#77776f,color:#111111
   style main fill:#fafaf8,stroke:#77776f,color:#111111
   class req,gpio edge
-  class routes,press,journal,settings code
+  style header fill:#fafaf8,stroke:#77776f,color:#111111
+  class routes,press,journal,settings,ota code
   class shot,loopfn safety
   class files,prefs store
 ```
 
-- **Shot logic** decides when the relay may be pressed. It enforces the 1 s cooldown between presses and
-  the time limits.
+- **Shot rules** decide when the relay may be pressed, including the 1 s cooldown and the time limits. They
+  have no Arduino code, so they can be tested on a PC. `main.cpp` supplies the clock and clicks the relay.
 - **`loop()`** checks the limits continuously on the ESP32, so a shot still stops if the phone sleeps.
+- **WiFi updates** only run outside a shot, because an update blocks `loop()` and so would block the stops.
 - **Journal storage** writes a replacement to a temp file first, checks its size, then swaps it in. A
   failure leaves the old file in place.
 

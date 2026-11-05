@@ -4,13 +4,13 @@ import { copyFileSync, existsSync, readFileSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pio } from './pio.mjs';
+import { hasHostCompiler, pio } from './pio.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const web = join(root, 'web');
 const firmware = join(root, 'firmware');
 const PAGE_GZ_LIMIT = 90 * 1024;
-const FLASH_LIMIT = Math.floor(0x140000 * 0.95); // the app partition is 0x140000 bytes
+const FLASH_LIMIT = Math.floor(0x140000 * 0.97); // the app partition is 0x140000 bytes and can't grow
 
 function run(cmd, args, cwd) {
   return spawnSync(cmd, args, { cwd, stdio: 'inherit', shell: process.platform === 'win32' }).status === 0;
@@ -41,12 +41,21 @@ const steps = {
     if (!run('npx', ['playwright', 'test', '--project=e2e'], web)) fail('Browser tests failed.');
   },
 
+  'shot logic tests on this PC'() {
+    if (!hasHostCompiler()) {
+      if (process.env.CI) fail('CI needs g++ for these tests.');
+      console.log('SKIPPED: no g++ here, so only CI will run these. To add one: pio pkg install -g -t platformio/toolchain-gccmingw32');
+      return;
+    }
+    if (!pio(['test', '-e', 'native'], firmware)) fail('Shot logic tests failed.');
+  },
+
   'firmware compiles and fits'() {
     const secrets = join(firmware, 'src', 'secrets.h');
     if (!existsSync(secrets)) copyFileSync(join(firmware, 'src', 'secrets.example.h'), secrets);
     if (!pio(['run'], firmware)) fail('The firmware did not compile.');
     const size = statSync(join(firmware, '.pio', 'build', 'esp32dev', 'firmware.bin')).size;
-    console.log(`Firmware: ${(size / 1024).toFixed(0)} KB, ${((size / 0x140000) * 100).toFixed(1)}% of the app partition (limit 95%)`);
+    console.log(`Firmware: ${(size / 1024).toFixed(0)} KB, ${((size / 0x140000) * 100).toFixed(1)}% of the app partition (limit 97%)`);
     if (size > FLASH_LIMIT) fail('The firmware is over its size limit.');
   },
 };

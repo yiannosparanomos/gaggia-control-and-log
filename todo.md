@@ -43,7 +43,9 @@ Download a backup from `/api/backup` before the first upload.
 - [ ] Replace the Commissioner and Doto fonts eventually, then update `THIRD_PARTY_NOTICES.md`.
 - [ ] Consider a password for WiFi firmware updates. There's none for now, so any device on the WiFi could
       replace the firmware.
-- [ ] Watch flash use: 89.9% of the 1.25 MB app partition. The scale and SSE will add to it.
+- [ ] **Flash is tight:** the firmware is 94.7% of the 1.25 MB app partition, including about 41 KB for WiFi
+      updates. Growing the partition would wipe the journal. Before adding the scale or SSE, look for savings:
+      replacing the fonts would help, and each weight is about 18 KB.
 
 ## Next: AI features
 

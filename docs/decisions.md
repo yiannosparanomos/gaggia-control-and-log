@@ -30,6 +30,9 @@ Why things are the way they are. For the events behind them, see [history.md](hi
 | Fonts and everything else bundled locally | The page must work with no internet access |
 | Stats, calendar and filtering run in the browser | The ESP32 has little memory to spare |
 | WiFi credentials in a git-ignored `secrets.h` | They stay out of the repo |
+| Shot rules live in `shot.h`, with no Arduino code | They control the pump, so they should be testable on a PC without hardware |
+| WiFi updates never start during a shot | An update blocks `loop()`, which would also block the auto-stop and safety stop |
+| No password on WiFi updates, for now | Simple to use on a home network. Any device on the WiFi could replace the firmware, so this will be reconsidered (see `todo.md`) |
 | A failed LittleFS mount never formats the flash | A failed mount may be recoverable, and a format would erase the journal |
 
 ## API

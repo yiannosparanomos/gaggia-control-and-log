@@ -1,22 +1,12 @@
 // =====================================================================
-//  Gaggia Carezza Deluxe - ESP32 shot timer (no load cell yet)
+//  Gaggia Carezza Deluxe - ESP32 shot timer and brew journal
 //
-//  - Start / stop the shot from your phone
-//  - Live timer
-//  - Optional auto-stop after a time limit (set from the phone)
-//  - Safety: always stops after MAX_SHOT_S seconds
-//  - Brew journal (dose, yield, ratio, taste scales, notes) saved in ESP32 flash
-//  - Coffees: your bags, with "this week" picks shown first when logging
-//  - Backup: /backup downloads everything as one JSON file
-//
-//  The journal survives normal uploads from Arduino IDE. It is only lost if you
-//  turn on Tools > "Erase All Flash Before Sketch Upload" or change Tools > Partition Scheme.
+//  Routes: docs/api.md. How it all fits together: docs/architecture.md.
+//  The shot rules are in shot.h, so they can be tested on a PC.
 //
 //  Wiring: relay IN -> GPIO19, VCC -> VIN (5V), GND -> GND
 //          relay COM + NO -> the two PB1 (coffee button) pads
 //  GPIO18 stays disabled (solder bridge with GPIO19).
-//
-//  Open on the phone:  http://espresso.local   or the IP shown in Serial Monitor
 //
 //  The web page is built from web/ and embedded via web_assets.h (gzipped).
 //  WiFi credentials live in secrets.h (not committed to git).
@@ -28,16 +18,16 @@
 #include <ESPmDNS.h>
 #include <Preferences.h>
 #include <LittleFS.h>
+#include <ArduinoOTA.h>
 #include "secrets.h"      // WIFI_SSID, WIFI_PASSWORD
 #include "web_assets.h"   // INDEX_HTML_GZ, INDEX_HTML_GZ_LEN
+#include "shot.h"
 
 // ============== CONFIGURATION ==============
 const char* hostname = "espresso";           // -> http://espresso.local
 
 #define RELAY_PIN 19                         // active LOW relay
 const unsigned long PRESS_MS    = 500;       // how long the relay "presses" the button
-const unsigned long COOLDOWN_MS = 1000;      // minimum time between two presses
-const float         MAX_SHOT_S  = 60.0;      // safety stop, always on
 const int           MIN_LIMIT_S = 5;
 const int           MAX_LIMIT_S = 60;
 // Keep false: a failed mount must never erase the journal. Set true for one upload only on a brand-new board.
@@ -45,15 +35,8 @@ const bool          FORMAT_IF_MOUNT_FAILS = false;
 
 // ============== STATE ==============
 bool storageOk = false;                      // did LittleFS mount? reported in /api/status
-enum ShotState { IDLE, BREWING, DONE };
-ShotState state = IDLE;
-unsigned long startMs = 0, stopMs = 0, lastPressMs = 0;
-bool everPressed = false;
-unsigned long presses = 0;
+Shot shot;                                   // limit and auto are saved in flash
 String reason = "";
-
-int  limitS   = 30;                          // saved in flash
-bool autoStop = true;                        // saved in flash
 
 const int HIST_N = 5;
 float histT[HIST_N];
@@ -64,14 +47,7 @@ WebServer server(80);
 Preferences prefs;
 
 // ============== RELAY ==============
-bool canPress() {
-  return !everPressed || (millis() - lastPressMs >= COOLDOWN_MS);
-}
-
-void pressButton() {
-  lastPressMs = millis();
-  everPressed = true;
-  presses++;
+void clickRelay() {
   digitalWrite(RELAY_PIN, LOW);
   delay(PRESS_MS);
   digitalWrite(RELAY_PIN, HIGH);
@@ -79,12 +55,6 @@ void pressButton() {
 }
 
 // ============== SHOT LOGIC ==============
-unsigned long elapsedMs() {
-  if (state == BREWING) return millis() - startMs;
-  if (state == DONE)    return stopMs - startMs;
-  return 0;
-}
-
 void addHistory(float t, const String& r) {
   for (int i = HIST_N - 1; i > 0; i--) { histT[i] = histT[i - 1]; histR[i] = histR[i - 1]; }
   histT[0] = t; histR[0] = r;
@@ -92,21 +62,17 @@ void addHistory(float t, const String& r) {
 }
 
 void startShot() {
-  if (state == BREWING || !canPress()) return;
-  startMs = millis();            // timer starts the moment the button is pressed
-  pressButton();
-  state = BREWING;
+  if (!shot.tryStart(millis())) return;   // timer starts the moment the button is pressed
+  clickRelay();
   reason = "";
   Serial.println(">> SHOT STARTED");
 }
 
 void stopShot(const String& why) {
-  if (state != BREWING || !canPress()) return;   // if in cooldown, loop() retries
-  stopMs = millis();
-  pressButton();
-  state = DONE;
+  if (!shot.tryStop(millis())) return;    // if in cooldown, loop() retries
+  clickRelay();
   reason = why;
-  float t = (stopMs - startMs) / 1000.0;
+  float t = (shot.stopMs - shot.startMs) / 1000.0;
   addHistory(t, why);
   Serial.printf(">> SHOT STOPPED at %.1f s (%s)\n", t, why.c_str());
 }
@@ -114,12 +80,12 @@ void stopShot(const String& why) {
 // ============== JSON ==============
 String statusJson() {
   String s = "{\"state\":\"";
-  s += (state == BREWING ? "brewing" : state == DONE ? "done" : "idle");
-  s += "\",\"elapsed\":";  s += elapsedMs();
-  s += ",\"limit\":";      s += limitS;
-  s += ",\"auto\":";       s += (autoStop ? "true" : "false");
+  s += (shot.state == BREWING ? "brewing" : shot.state == DONE ? "done" : "idle");
+  s += "\",\"elapsed\":";  s += shot.elapsedMs(millis());
+  s += ",\"limit\":";      s += shot.limitS;
+  s += ",\"auto\":";       s += (shot.autoStop ? "true" : "false");
   s += ",\"reason\":\"";   s += reason;
-  s += "\",\"presses\":";  s += presses;
+  s += "\",\"presses\":";  s += shot.presses;
   s += ",\"storage\":";    s += (storageOk ? "true" : "false");
   s += ",\"last\":[";
   for (int i = 0; i < histCount; i++) {
@@ -145,28 +111,24 @@ void handleStatus() { sendStatus(); }
 void handleStart()  { startShot(); sendStatus(); }
 void handleStop()   { stopShot("manual"); sendStatus(); }
 
-// The relay only toggles the button, so a raw press during a timed shot would leave the ESP32 thinking
-// the pump runs when it stopped, and its next "stop" press would START the pump. Use /api/stop instead.
 void handlePress() {
-  if (state != BREWING && canPress()) pressButton();
+  if (shot.tryPress(millis())) clickRelay();
   sendStatus();
 }
 
-// Resets the screen only, never the machine (that's the point: it resyncs after a press on the machine).
-// During a timed shot it also ends the auto and safety stops, so the caller must confirm the machine has stopped.
 void handleReset() {
-  if (state != BREWING || server.arg("confirm") == "1") { state = IDLE; reason = ""; }
+  if (shot.tryReset(server.arg("confirm") == "1")) reason = "";
   sendStatus();
 }
 
 void handleSet() {
   if (server.hasArg("limit")) {
-    limitS = constrain(server.arg("limit").toInt(), MIN_LIMIT_S, MAX_LIMIT_S);
-    prefs.putInt("limit", limitS);
+    shot.limitS = constrain(server.arg("limit").toInt(), MIN_LIMIT_S, MAX_LIMIT_S);
+    prefs.putInt("limit", shot.limitS);
   }
   if (server.hasArg("auto")) {
-    autoStop = server.arg("auto") == "1";
-    prefs.putBool("auto", autoStop);
+    shot.autoStop = server.arg("auto") == "1";
+    prefs.putBool("auto", shot.autoStop);
   }
   sendStatus();
 }
@@ -316,9 +278,9 @@ void setup() {
   pinMode(18, INPUT);              // GPIO18 disabled (bridged to GPIO19)
 
   prefs.begin("espresso", false);
-  limitS   = prefs.getInt("limit", 30);
-  autoStop = prefs.getBool("auto", true);
-  Serial.printf("Limit: %d s, auto-stop: %s\n", limitS, autoStop ? "ON" : "OFF");
+  shot.limitS   = prefs.getInt("limit", 30);
+  shot.autoStop = prefs.getBool("auto", true);
+  Serial.printf("Limit: %d s, auto-stop: %s\n", shot.limitS, shot.autoStop ? "ON" : "OFF");
 
   storageOk = LittleFS.begin(FORMAT_IF_MOUNT_FAILS);
   if (!storageOk) Serial.println("ERROR: flash storage (LittleFS) did not mount. Nothing was erased; journal unavailable");
@@ -336,6 +298,11 @@ void setup() {
     MDNS.addService("http", "tcp", 80);
     Serial.printf("Also: http://%s.local\n", hostname);
   }
+
+  // WiFi firmware updates. No password for now: see todo.md.
+  ArduinoOTA.setHostname(hostname);
+  ArduinoOTA.setMdnsEnabled(false);   // MDNS.begin above already did this
+  ArduinoOTA.begin();
 
   server.on("/", handleRoot);
   server.on("/api/status", HTTP_GET, handleStatus);
@@ -361,11 +328,11 @@ void loop() {
   server.handleClient();
 
   // Auto-stop runs on the ESP32 itself, so it works even if the phone sleeps or loses WiFi
-  if (state == BREWING) {
-    float e = elapsedMs() / 1000.0;
-    if (autoStop && e >= limitS)  stopShot("limit");
-    else if (e >= MAX_SHOT_S)     stopShot("safety");
-  }
+  const char* why = shot.dueStop(millis());
+  if (why) stopShot(why);
+
+  // An update blocks this loop, which would also block the stops above, so never start one during a shot
+  if (shot.state != BREWING) ArduinoOTA.handle();
 
   // Reconnect if WiFi drops
   if (WiFi.status() != WL_CONNECTED) {
