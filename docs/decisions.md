@@ -8,6 +8,7 @@ Why things are the way they are. For the events behind them, see [history.md](hi
 |---|---|
 | The ESP32 connects to the machine only through the relay's dry contacts | The button board is not isolated from 230 V mains. Probing it while plugged in tripped the house RCD |
 | Nothing starts the pump without a human action on the phone | No timers or automation may start a shot unattended. Future MCP tools can read and log, but can't start the pump |
+| `start.` ignores taps for 400 ms after a sheet closes, and `stop.` is never delayed | A double-tap on a close button could otherwise land on `start.` and run the pump with no cup |
 | 60 s safety stop on every timed shot, separate from the auto-stop limit | A forgotten or mistimed shot still ends |
 | Auto-stop runs on the ESP32, not in the app | It keeps working if the phone sleeps or loses WiFi |
 
@@ -25,7 +26,10 @@ Why things are the way they are. For the events behind them, see [history.md](hi
 | Time-based control first, scale postponed | Gets phone control working sooner. The old scale code is kept in [legacy/](legacy/) |
 | PlatformIO in VS Code instead of the Arduino IDE | Better fit for developing with a repo and Claude Code |
 | UI built into one HTML file, gzipped into the firmware | Storing it on LittleFS would need a filesystem upload, which wipes the journal |
-| Fonts and everything else bundled locally | The page must work with no internet access |
+| Fonts and everything else bundled locally | The page must work with no internet access. The optional chat is the one exception, and only the chat stops working offline |
+| Chat calls Mistral from the phone, with each user's own key | Its API allows browser calls, it needs no server, and credentials stay off the ESP32. Gemini's free tier can't be offered to EU, Swiss or UK users |
+| The demo includes nine of the owner's real brews, beside the examples | The owner chose to publish these. Journal copies otherwise stay out of git |
+| Chat has no tools | Nothing starts the pump without a human action, so a reply must have no way to reach the machine |
 | Stats, calendar and filtering run in the browser | The ESP32 has little memory to spare |
 | WiFi credentials in a git-ignored `secrets.h` | They stay out of the repo |
 | Shot rules live in `shot.h`, with no Arduino code | They control the pump, so they should be testable on a PC without hardware |

@@ -24,6 +24,8 @@ simulated machine, with no hardware needed.
 - **Journal:** dose, yield, ratio, grind, six taste scales and notes, in a list or a calendar.
 - **Coffees:** your bags, how many days off roast, and which ones you're drinking this week.
 - **Your data stays on the ESP32:** download or restore it as one backup file.
+- **Optional chat:** ask about your shots with your own Mistral key. It's the only part that needs internet, and each
+  question sends the current screen and your last 5 shots to Mistral.
 
 ## Quick start
 

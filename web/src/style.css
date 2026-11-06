@@ -25,7 +25,7 @@
     line-height: 1.45;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
-    padding-block: 18px 48px;
+    padding-block: 18px 88px;
     -webkit-tap-highlight-color: transparent;
   }
   button, input, textarea, select { font: inherit; color: inherit; }
@@ -191,6 +191,16 @@
   .advice { font-size: 0.85rem; border-left: 3px solid var(--signal); padding: 4px 0 4px 10px; margin: 0; }
   .actions { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
 
+  /* chat */
+  .ask { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 10; min-width: 56px; height: 56px; padding: 0 14px; border: none; border-radius: 28px 28px 6px 28px; background: var(--ink); color: var(--paper); font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+  .sheet-in.chat { height: 85%; }
+  .chat-log { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .msg { max-width: 85%; padding: 9px 13px; border-radius: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg code { font-family: ui-monospace, Menlo, monospace; font-size: 0.9em; }
+  .msg.me { align-self: flex-end; background: var(--ink); color: var(--paper); border-bottom-right-radius: 4px; }
+  .msg.ai { align-self: flex-start; background: var(--card); border: 1px solid var(--hair); border-bottom-left-radius: 4px; }
+  .msg.err { align-self: flex-start; color: var(--signal); border: 1px dashed var(--signal); }
+  .chat input { flex: 1; min-width: 0; border: 1px solid var(--hair); background: var(--card); border-radius: 12px; padding: 11px 12px; }
   .toast { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 999px; font-size: 0.9rem; font-weight: 600; z-index: 30; max-width: calc(100% - 32px); text-align: center; }
 
   @media (max-width: 360px) { .grid3 { grid-template-columns: 1fr 1fr; } }

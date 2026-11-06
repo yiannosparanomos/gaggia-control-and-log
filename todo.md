@@ -68,6 +68,9 @@ Bugs and cleanup found while reading the code on 5 Nov 2026. Planned work is in
 
 - [ ] **MCP server on the PC, first after the repo is published.** Read and log tools only, with no tool
       that starts the pump. See [docs/roadmap.md](docs/roadmap.md).
+- [ ] **Plain HTTP and the planned chat's API key.** Accepted for now, so no action yet. The app is served over
+      `http://`, so if the Mistral chat stores a key on the phone, someone on the WiFi could tamper with the page and
+      steal that key. Revisit if the app moves to HTTPS or leaves the home network.
 - [ ] **Evals for the dial-in advice.** Replay past shots and measure whether the advice would have helped.
 - [ ] **Advice that learns from one user's own shots.** Record each suggestion and the next shot's rating,
       so the journal shows what worked. No shared server. Note that Claude reading the journal still

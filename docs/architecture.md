@@ -16,7 +16,7 @@ how changes reach the machine, which C4 doesn't describe.
 ## 1. Context
 
 You use your phone. The add-on presses the machine's coffee button for you, exactly as a finger would. It
-can't see what the machine is doing, and it works with no internet.
+can't see what the machine is doing, and it works with no internet. Only the optional chat needs internet.
 
 ```mermaid
 flowchart LR
@@ -172,6 +172,10 @@ flowchart LR
 
 With `?sim`, the same app runs with a JavaScript imitation of the firmware, so it needs no hardware. It
 looks identical, but it can't show the real relay, flash storage or timing.
+
+The **chat** doesn't use `request()`. The phone calls Mistral directly with the user's own key, so the ESP32 stays
+offline and never sees the key. It has no tools, so a reply can't reach the machine. Replies are escaped, then only
+basic markdown is formatted: bold, italic, code, headings and bullets. With `?sim` and no key, it gives a simulated answer. See [api.md](api.md#chat).
 
 ## 4. How a shot runs
 
