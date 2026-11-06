@@ -21,27 +21,8 @@ Bugs and cleanup found while reading the code on 5 Nov 2026. Planned work is in
 
 ## Fixed in code: check on the real machine
 
-**Before the first upload, unplug the machine from mains and disconnect the relay's COM and NO wires.** A relay
-click during a restart would start the pump, with no timed shot running to stop it.
-
-The first upload needs the cable, and it also moves to the new partition table, which wipes the journal once.
-Run these in `web/`, in this order:
-
-1. Set `FORMAT_IF_MOUNT_FAILS = true` in `firmware/src/main.cpp`.
-2. `npm run flash -- --usb`. It backs up the journal first and prints the backup's path, so note it. Check that it
-   reports 11 or more brews. At the end it warns that the journal has 0 brews, which is expected this once. If it
-   says the storage did not mount, step 1 was missed: do step 1, then run this again.
-3. On the PC, open `http://192.168.2.6`, go to the log tab and use **restore from file** with the backup from step 2.
-   Check that all the brews and coffees are back.
-4. Set `FORMAT_IF_MOUNT_FAILS` back to `false`.
-5. `npm run flash` over WiFi. It should say the journal still has all your brews.
-
-Then:
-
-- [ ] Listen for a relay click during each restart. If it clicks, don't reconnect until that's fixed.
-- [ ] Only then reconnect the wires, with the machine still unplugged, and plug it back in.
-
-- [ ] Step 5 above also proves that WiFi uploads work.
+- [ ] Do the first flash: [docs/development.md](docs/development.md#first-flash-or-after-a-partition-change).
+      Its last step also proves that WiFi uploads work, and it checks for a relay click during a restart.
 - [ ] Actions and settings are POST only. Start, stop, change the limit, and toggle auto stop from the phone.
 - [ ] Opening `/api/start` in a browser returns 404 and the relay doesn't click.
 - [ ] Reset during a shot needs a second tap, and `/api/press` does nothing during a shot.
@@ -50,7 +31,7 @@ Then:
       replace-by-rename, also used when saving coffees. If it fails, the app reports an error and the
       old file stays in place.
 - [ ] Opening the journal during a shot shows the old list, and it reloads when the shot ends.
-- [ ] Tap start during a WiFi update you make fail, with the relay disconnected. The ESP32 should restart, and no
+- [ ] Tap start during a WiFi update you make fail, with the machine unplugged. The ESP32 should restart, and no
       shot should start.
 - [ ] A failed LittleFS mount no longer formats the flash, and the app shows a warning instead.
       A brand-new board needs `FORMAT_IF_MOUNT_FAILS = true` for one upload.

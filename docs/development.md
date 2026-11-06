@@ -10,20 +10,8 @@ The journal lives on the ESP32's flash, and a normal `pio run -t upload` doesn't
 - Take a backup before any change that touches partitions or the storage format (`npm run flash -- --dry-run`).
 - A new storage format needs a migration that reads the old files.
 
-### Changing the partition table
-
-This wipes the journal, so it's only worth doing rarely. A WiFi update can't change the table, so use the cable.
-Unplug the machine from mains and disconnect the relay's COM and NO wires first, because a relay click during a
-restart would start the pump. Then:
-
-1. Set `FORMAT_IF_MOUNT_FAILS = true` in `main.cpp`. Without it, the new storage can't be created.
-2. Run `npm run flash -- --usb`. It saves a backup and prints its path, uploads, then warns that the journal has
-   0 brews. That's expected this once. If it says the storage did not mount, step 1 was missed.
-3. Open the app and use **restore from file** with the backup from step 2. Check the brew count. If a restore
-   stops partway, picking the file again is safe, because brews already restored are skipped.
-4. Set `FORMAT_IF_MOUNT_FAILS` back to `false`.
-5. Run `npm run flash`, and confirm it reports all your brews. `npm run check` and WiFi uploads refuse to run
-   until step 4 is done.
+To change the partition table, follow [First flash](#first-flash-or-after-a-partition-change). It wipes the journal
+once, so it's only worth doing rarely.
 
 ## Testing
 
@@ -98,7 +86,8 @@ It does the following, and uploads nothing if an earlier step fails:
 
 `npm run flash -- --dry-run` does only the first two steps, so it's also a quick way to take a backup.
 
-**The first upload needs the cable**, because older firmware has no WiFi updates. WiFi uploads can't start
+**The first upload needs the cable**, because older firmware has no WiFi updates: see
+[First flash](#first-flash-or-after-a-partition-change). WiFi uploads can't start
 during a shot. If new firmware crashes before joining WiFi, you'll need the cable again.
 
 If the ESP32 can't be reached at all, there's no backup to take, so the command stops. Only then, use
@@ -110,6 +99,45 @@ With the cable:
 - If you get "Wrong boot mode" errors, hold **BOOT** during "Connecting...".
 - "Hard resetting via RTS pin..." at the end is normal. It isn't stuck.
 - The board's reset button is labelled **RST**.
+
+### First flash, or after a partition change
+
+Use this once to move an ESP32 onto the current partition table. It needs the cable, because a WiFi update can't
+change the table, and it wipes the journal, so it backs it up and restores it. The ESP32 can stay wired to the
+machine.
+
+**Prepare**
+
+1. Unplug the machine from the wall. Its switch isn't enough. With no mains, a relay click during a restart can't
+   start the pump.
+2. Connect the ESP32 to the PC by USB. If it normally runs from its own adapter, unplug that first. It still joins
+   the WiFi on USB power.
+3. Close the Arduino IDE and any serial monitor.
+
+**Flash**
+
+4. In `firmware/src/main.cpp`, set `FORMAT_IF_MOUNT_FAILS` to `true`. Save it, but don't commit it.
+5. In `web/`, run `npm run flash -- --usb`.
+   - Check the brew count it reports, and **copy the backup path it prints**.
+   - If it stops at "Connecting...", hold **BOOT** until the upload starts.
+   - During the restart at the end, **listen for a relay click**.
+   - A warning at the end that the journal has 0 brews is expected this once. If it says the storage did not mount,
+     step 4 was missed: do step 4 and run this again.
+
+**Restore**
+
+6. On the PC, open `http://192.168.2.6` and go to the log tab.
+7. Use **restore from file** with the backup from step 5, and check that the brews and coffees are back. If a restore
+   stops partway, picking the file again is safe, because brews already restored are skipped.
+
+**Finish**
+
+8. Set `FORMAT_IF_MOUNT_FAILS` back to `false`. `npm run check` and WiFi uploads refuse to run until you do.
+9. In `web/`, run `npm run flash`. It goes over WiFi, and it should say the journal still has all the brews.
+10. Disconnect the USB cable, power the ESP32 as normal, and plug the machine back in.
+
+**If you heard a click in step 5,** keep the machine unplugged during every update until that's fixed, because with
+mains connected that click would start the pump. If there was no click, later WiFi updates can run with it plugged in.
 
 ## CI and the demo
 
