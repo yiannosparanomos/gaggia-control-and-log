@@ -16,8 +16,6 @@ the repair that got the machine's own buttons working reliably again.
 |---|---|
 | ESP32 DevKit V1 (ESP32-D0WD-V3, 4 MB flash) | Runs the firmware and the web app. Powered from a USB phone charger, kept outside the machine |
 | 1-channel 5 V relay module, optocoupled (Songle SRD-05VDC-SL-C) | Presses the coffee button. Active LOW |
-| HX711 load cell amplifier | For the scale. Not used by the current firmware |
-| 1 kg bar load cell | For the scale. 1 kg gives much better resolution than 5 kg for a ~40 g shot |
 | Thin insulated wire, flux, solder, 10 kΩ 1% through-hole resistor | The resistor was for the R8 repair below |
 
 Bought from Grobotronics (Greece).
@@ -43,8 +41,6 @@ flowchart LR
     PB1a
     PB1b
   end
-  ESP -.->|"GPIO4, GPIO5, 3.3V, GND"| HX[HX711]
-  HX -.->|4 wires| LC[1 kg load cell]
 ```
 
 | From | To | Notes |
@@ -54,9 +50,6 @@ flowchart LR
 | Relay GND | GND | |
 | Relay **COM** | PB1 pad | Middle screw terminal |
 | Relay **NO** | other PB1 pad | The outer terminal that does **not** beep to COM when the relay is off. NC stays empty |
-| HX711 VCC / GND | 3.3 V / GND | Scale (optional) |
-| HX711 DT / SCK | GPIO4 / GPIO5 | Scale (optional) |
-| Load cell red / black / white / green | E+ / E− / A− / A+ | A+ and A− are swapped on this build, corrected with a negative calibration factor |
 
 **GPIO18 is solder-bridged to GPIO19** on this particular ESP32, so the firmware keeps GPIO18 as an
 input and never drives it.
@@ -156,24 +149,3 @@ resistor** across R8's two vias (measured 9.9 kΩ on the board). The button has 
 U1's pins 7 and 9, which are outputs in the standard pinout, beep to ground. This may just be how
 unused channels are tied. It has caused no problems so far, but it's worth remembering if the LEDs ever
 misbehave.
-
----
-
-## The scale (not in the current firmware)
-
-The HX711 and load cell worked in April 2026, stopping the shot at 40 g. The code is in
-[legacy/](legacy/).
-
-**Calibration:** the factor came out at **−756.8** with a 71.4 g reference weight. It's negative because
-A+ and A− are swapped. To recalibrate: `new_factor = old_factor × displayed_weight / actual_weight`.
-
-**Problems already solved**
-
-- The ESP32 boot-looped with the HX711 disconnected. Use `wait_ready_timeout(3000)`.
-- Readings drifted upward because of bad solder joints on the load cell wires.
-
-**Needed to bring it back**
-
-- Rigid mounting with M3 screws, not zip ties or hot glue.
-- Some waterproofing for the load cell.
-- A platform. A 2–3 mm aluminium sheet was being considered.

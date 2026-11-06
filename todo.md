@@ -51,6 +51,11 @@ Bugs and cleanup found while reading the code on 5 Nov 2026. Planned work is in
       fills, new brews are refused too, and only a filesystem wipe after a backup frees it. Far off, but needs an
       answer before then, such as an in-place delete or moving old brews to Google storage.
 
+## Future hardware
+
+- [ ] **Scale.** The load cell has been removed, and the current hardware is only the ESP32 and the relay. Revisit
+      the scale side of the app later, not now. What we learned is in [docs/legacy/](docs/legacy/README.md).
+
 ## Next: AI features
 
 - [ ] **MCP server on the PC, first after the repo is published.** Read and log tools only, with no tool

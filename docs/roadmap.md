@@ -10,7 +10,6 @@ Known bugs are in [`todo.md`](../todo.md). This page covers status and planned w
 | Web app | **timer.**, **journal.** (list and calendar) and **coffees.** tabs, a log form with six taste scales, and backup and restore |
 | Relay and machine | COM and NO wired to PB1 and bench-tested clicking. A real shot through the machine still needs confirming |
 | Demo | The app beside a simulated machine, published to GitHub Pages from `main` |
-| Scale | Worked in April 2026 with a stop at 40 g. Not in the current firmware |
 
 ## Planned work
 
@@ -26,11 +25,11 @@ Roughly in order.
    truth, and SSE or WebSocket for the live timer instead of polling every 300 ms.
 4. **Cloud sync** of brews and coffees. The backend isn't chosen. Options to discuss first: a small
    FastAPI service, Supabase or Google Sheets.
-5. **Scale back in**, with stop by weight and a live extraction curve. See
-   [hardware.md](hardware.md#the-scale-not-in-the-current-firmware) for what it needs.
-6. **Sense the pump's state** through proper isolation, which fixes the top bugs in `todo.md`. See
+5. **Sense the pump's state** through proper isolation, which fixes the top bugs in `todo.md`. See
    [development.md](development.md#the-esp32-cant-see-the-machine).
-7. **Enclosures for the ESP32 and relay**, keeping low voltage physically apart from mains.
+6. **Enclosures for the ESP32 and relay**, keeping low voltage physically apart from mains.
+
+A scale is future hardware, to revisit later: see [`todo.md`](../todo.md#future-hardware).
 
 ## Related project: the machine's enclosure
 

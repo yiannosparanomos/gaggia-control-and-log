@@ -22,7 +22,7 @@ before any non-trivial task. Known bugs: `todo.md`. Planned work: `docs/roadmap.
 - `web/public/demo.html` the GitHub Pages demo. Not in the firmware.
 - `.github/workflows/` CI and the demo deploy. No self-hosted runners, ever.
 - `.claude/` the command guard hook and two subagents. `.githooks/` and `tools/check-docs.mjs` the docs check.
-- `docs/` start at `docs/README.md`. Includes hardware, architecture, API, development notes, decisions, roadmap, history, images/, legacy/ (old scale code, not built).
+- `docs/` start at `docs/README.md`. Includes hardware, architecture, API, development notes, decisions, roadmap, history, images/, legacy/ (the removed scale: code and notes, not built).
 - `todo.md` known bugs and cleanup.
 
 ## Commands
@@ -45,8 +45,6 @@ Run in `web/`. Details: `docs/development.md`.
 - Relay module (active LOW): IN → **GPIO19**, VCC → VIN (5V), GND → GND. COM + NO → the two PB1 pads
   (coffee button) on the Gaggia button board (KBD). NC unused.
 - **GPIO18 is solder-bridged to GPIO19.** Keep `pinMode(18, INPUT)` and never use GPIO18.
-- HX711 load cell amp (not used by current code, may be wired): DT → GPIO4, SCK → GPIO5, VCC → 3.3V.
-  Load cell calibration factor last measured: -756.8 (A+/A- swapped, corrected in code).
 - Relay press = 500 ms LOW, minimum 1000 ms between presses. Safety stop at 60 s on every timed shot.
 - Upload sometimes needs the BOOT button held during "Connecting...". The reset button is labelled RST.
 

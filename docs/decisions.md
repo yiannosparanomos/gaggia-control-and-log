@@ -17,8 +17,6 @@ Why things are the way they are. For the events behind them, see [history.md](hi
 |---|---|
 | Relay press is 500 ms, with at least 1 s between presses | Shorter timings caused missed presses and double clicks |
 | Relay on GPIO19, GPIO18 kept as an input forever | The two pins are solder-bridged on this board |
-| Load cell A+/A− swap corrected in code with a negative factor (−756.8) | Simpler than resoldering |
-| 1 kg load cell rather than 5 kg | Much better resolution for a shot of about 40 g |
 
 ## Software
 
@@ -36,7 +34,7 @@ Why things are the way they are. For the events behind them, see [history.md](hi
 | WiFi updates never start during a shot | An update blocks `loop()`, which would also block the auto-stop and safety stop |
 | No password on WiFi updates, for now | Simple to use on a home network. Any device on the WiFi could replace the firmware, so this will be reconsidered (see `todo.md`) |
 | A failed LittleFS mount never formats the flash | A failed mount may be recoverable, and a format would erase the journal |
-| Custom partition table: two 1.5 MB app slots and 896 KB of storage | The firmware was 95% of a 1.25 MB slot with the scale still to come, while the journal used about 2.5 KB of 1.375 MB. Both slots stay, because WiFi updates write to the one that isn't running |
+| Custom partition table: two 1.5 MB app slots and 896 KB of storage | The firmware was 95% of a 1.25 MB slot with more features still to come, while the journal used about 2.5 KB of 1.375 MB. Both slots stay, because WiFi updates write to the one that isn't running |
 | New brews are refused when under 8 KB of storage is free | A brew cut off by full flash would make the whole journal unreadable |
 
 ## API
