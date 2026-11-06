@@ -8,6 +8,10 @@ at a time limit, and keep a brew journal, all from your home WiFi with no cloud 
 > machine before touching anything inside it. The ESP32 connects only through a relay's dry contacts. Do
 > this at your own risk: the software comes with no warranty, and the changes may void the machine's.
 
+> [!IMPORTANT]
+> **For home use, by one device at a time.** It isn't designed for commercial use or coffee shops. If two devices
+> save changes around the same time, one can overwrite the other's coffee list.
+
 **[Try the demo in your browser](https://yiannosparanomos.github.io/gaggia-control-and-log/)**: the real app beside a
 simulated machine, with no hardware needed.
 

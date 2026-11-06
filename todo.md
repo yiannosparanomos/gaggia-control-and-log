@@ -51,6 +51,12 @@ Bugs and cleanup found while reading the code on 5 Nov 2026. Planned work is in
       fills, new brews are refused too, and only a filesystem wipe after a backup frees it. Far off, but needs an
       answer before then, such as an in-place delete or moving old brews to Google storage.
 
+## Much later
+
+- [ ] **Saving from two devices can lose coffees.** The app sends the whole coffee list on each save, so the last
+      save wins. For now, one device at a time is assumed (see [decisions](docs/decisions.md#api)). Fix it with
+      separate add, edit and remove routes if that assumption ever changes, for example with cloud sync.
+
 ## Future hardware
 
 - [ ] **Scale.** The load cell has been removed, and the current hardware is only the ESP32 and the relay. Revisit

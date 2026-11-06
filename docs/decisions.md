@@ -43,6 +43,7 @@ Why things are the way they are. For the events behind them, see [history.md](hi
 |---|---|
 | Everything under `/api` | Keeps the app and the API separate |
 | Actions and settings are POST only | Link previews and browser prefetches can't press the relay |
+| Designed for home use, by one device at a time | The app sends the whole coffee list on each save, so two devices can overwrite each other. Not meant for commercial use or coffee shops |
 | No authentication | The API trusts the home network. Any device on the WiFi, or a web page open on one, can still send a POST. Accepted for this project |
 
 ## Delivery
