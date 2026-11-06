@@ -60,7 +60,7 @@ but not that it's right, so read the diff too. In Claude Code, the `docs-keeper`
 
 - `platformio.ini` pins the platform version, which currently brings Arduino core **3.3.12**.
 - The firmware is about 79% of its 1.5 MB app partition, which can't grow without wiping the journal.
-- The gzipped page is about 72 KB.
+- The gzipped page is about 75 KB.
 - npm may ask to approve esbuild's install script (`npm install-scripts approve esbuild`). It's Vite's
   normal build tool.
 - PlatformIO often isn't on PATH when installed through VS Code. The npm scripts find it anyway. To run it

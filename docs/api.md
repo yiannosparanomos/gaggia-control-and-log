@@ -62,6 +62,15 @@ Long journal work is refused during a shot, because it could block the auto-stop
 | LittleFS `/coffees.json` | The whole coffees array: `{id, name, roaster, roasted, week}` |
 | NVS namespace `espresso` | Settings: `limit` (seconds) and `auto` |
 
+## Chat
+
+The chat isn't an ESP32 route. The phone sends `POST https://api.mistral.ai/v1/chat/completions` directly, using the
+model `ministral-14b-2512`, because the free plan allows `mistral-small-2603` 0 requests per minute even though it lists it. Each request carries the visible tab's text (up to 4000 characters), the last 5 brews and
+the last 9 chat messages. Chat messages stay in memory, and the key stays in the browser's `localStorage` as
+`gaggia-mistral-key`. To remove it, tap **forget key.**
+
+## Brew format
+
 A brew looks like this:
 
 ```json

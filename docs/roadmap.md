@@ -7,7 +7,7 @@ Known bugs are in [`todo.md`](../todo.md). This page covers status and planned w
 | Piece | State |
 |---|---|
 | Firmware | Start and stop through the relay, auto-stop at 5–60 s, 60 s safety stop, journal and coffees on LittleFS. Running on the real ESP32 and updated over WiFi. A few checks are still open in `todo.md` |
-| Web app | **timer.**, **journal.** (list and calendar) and **coffees.** tabs, a log form with six taste scales, and backup and restore |
+| Web app | **timer.**, **journal.** (list and calendar) and **coffees.** tabs, a log form with six taste scales, backup and restore, and an optional text-only Mistral chat |
 | Relay and machine | COM and NO wired to PB1, with real shots run through the machine from the app |
 | Demo | The app beside a simulated machine, published to GitHub Pages from `main` |
 

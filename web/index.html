@@ -199,6 +199,28 @@
   </form>
 </div>
 
+<!-- ===== chat ===== -->
+<button class="ask" id="chatOpen" type="button">ask.</button>
+<div class="sheet" id="chatSheet" hidden>
+  <div class="sheet-in chat" lang="en">
+    <div class="sheet-head">
+      <h2>ask.</h2>
+      <button class="btn ghost small" type="button" id="chatClose" aria-label="Close">✕</button>
+    </div>
+    <div class="chat-log" id="chatLog" aria-live="polite"></div>
+    <form class="inline" id="chatForm" autocomplete="off">
+      <input id="chatInput" aria-label="Your question" placeholder="ask about your shots.">
+      <button class="btn small" id="chatSend" type="submit">send.</button>
+    </form>
+    <p class="hint">Each question sends this screen and your last 5 shots to Mistral.</p>
+    <form class="inline" id="keyForm" autocomplete="off">
+      <input id="keyInput" type="password" aria-label="Mistral key" placeholder="paste your Mistral key.">
+      <button class="btn ghost small" type="submit">save.</button>
+    </form>
+    <button class="btn ghost small" id="keyForget" type="button" hidden>forget key.</button>
+  </div>
+</div>
+
 <div class="toast" id="toast" hidden></div>
 <script type="module" src="/src/main.js"></script>
 </body>

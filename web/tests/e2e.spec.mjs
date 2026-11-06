@@ -278,3 +278,75 @@ test('a full journal says so, not "check the connection"', async ({ app, fake })
   await expect(app.locator('#toast')).toContainText('storage is full');
   expect(fake.brews).toEqual([]);
 });
+
+test('a double-tap on a sheet close button cannot start a shot, but stop is never delayed', async ({ app, fake }) => {
+  const closeThenMain = (closeId) => app.evaluate((id) => {
+    document.getElementById(id).click();
+    document.getElementById('main').click();
+  }, closeId);
+  await app.locator('#chatOpen').click();
+  await closeThenMain('chatClose');
+  await app.waitForTimeout(450);   // so only the log form's own close can block the next start
+  await app.locator('#tabLog').click();
+  await app.locator('#newEntry').click();
+  await closeThenMain('closeX');
+  await app.locator('#tabTimer').click();
+  await app.waitForTimeout(100);
+  expect(fake.log).not.toContain('POST /api/start');
+
+  await app.waitForTimeout(450);
+  await app.locator('#main').click();
+  await sent(fake, 'POST /api/start');
+  await expect(app.locator('#main')).toHaveText('stop.');
+
+  await app.locator('#chatOpen').click();
+  await closeThenMain('chatClose');
+  await sent(fake, 'POST /api/stop');
+});
+
+test('chat sends the screen and last 5 brews to Mistral, shows replies as text, and never touches the machine', async ({ page, fake }) => {
+  fake.brews = [0, 1, 2, 3, 4, 5].map((i) => ({ id: i + 1, ts: i + 1, coffee: 'Kenya AA', comment: 'shot-' + i }));
+  const sentToMistral = [];
+  const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' };
+  let status = 401;
+  await page.route('https://api.mistral.ai/**', (route) => {
+    const req = route.request();
+    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    sentToMistral.push({ auth: req.headers().authorization, ...req.postDataJSON() });
+    return route.fulfill({ status, headers: cors, contentType: 'application/json',
+      body: JSON.stringify({ choices: [{ message: { content: '<img src=x>**Try** finer.\n- *less* dose' } }] }) });
+  });
+  await page.goto(fake.url + '/');
+  await expect.poll(() => fake.log).toContain('GET /api/brews');
+  await page.locator('#chatOpen').click();
+
+  await page.locator('#chatInput').fill('why so fast?');
+  await page.locator('#chatSend').click();
+  await expect(page.locator('.msg.err')).toContainText('Add your Mistral key');
+  await expect(page.locator('#chatInput')).toHaveValue('why so fast?');
+  expect(sentToMistral).toEqual([]);
+
+  await page.locator('#keyInput').fill('test-key');
+  await page.locator('#keyForm button').click();
+  await page.locator('#chatSend').click();
+  await expect(page.locator('.msg.err').last()).toContainText('refused the key');
+
+  status = 200;
+  await page.locator('#chatSend').click();
+  await expect(page.locator('.msg.ai')).toContainText('<img src=x>Try finer.');   // HTML stays text
+  await expect(page.locator('.msg.ai')).toContainText('• less dose');
+  await expect(page.locator('.msg img')).toHaveCount(0);
+  await expect(page.locator('.msg.ai b')).toHaveText('Try');
+  await expect(page.locator('.msg.ai i')).toHaveText('less');
+
+  const last = sentToMistral.at(-1);
+  expect(last.auth).toBe('Bearer test-key');
+  expect(last.model).toBe('ministral-14b-2512');
+  expect(last.messages.map((m) => m.role)).toEqual(['system', 'user']);   // failed attempts left no history
+  const context = last.messages[0].content;
+  expect(context).toContain('start.');     // the visible screen
+  expect(context).toContain('shot-5');     // the newest brew
+  expect(context).toContain('shot-1');     // the fifth newest
+  expect(context).not.toContain('shot-0'); // the sixth isn't sent
+  expect(fake.log.filter((l) => l.startsWith('POST'))).toEqual([]);
+});
