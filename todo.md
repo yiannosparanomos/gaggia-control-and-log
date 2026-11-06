@@ -21,16 +21,17 @@ Bugs and cleanup found while reading the code on 5 Nov 2026. Planned work is in
 
 ## Fixed in code: check on the real machine
 
-- [ ] Do the first flash: [docs/development.md](docs/development.md#first-flash-or-after-a-partition-change).
+- [x] Do the first flash: [docs/development.md](docs/development.md#first-flash-or-after-a-partition-change).
       Its last step also proves that WiFi uploads work, and it checks for a relay click during a restart.
-- [ ] Actions and settings are POST only. Start, stop, change the limit, and toggle auto stop from the phone.
+- [x] Actions and settings are POST only. Start, stop, change the limit, and toggle auto stop from the phone.
 - [ ] Opening `/api/start` in a browser returns 404 and the relay doesn't click.
-- [ ] Reset during a shot needs a second tap, and `/api/press` does nothing during a shot.
+- [x] Reset during a shot needs a second tap.
+- [ ] `/api/press` does nothing during a shot.
 - [ ] A failed coffee load no longer wipes the list. (Tested in a browser against a fake ESP32.)
-- [ ] Delete a test brew and confirm the others remain. This is the first real test of the new
+- [x] Delete a test brew and confirm the others remain. This is the first real test of the new
       replace-by-rename, also used when saving coffees. If it fails, the app reports an error and the
       old file stays in place.
-- [ ] Opening the journal during a shot shows the old list, and it reloads when the shot ends.
+- [x] Opening the journal during a shot shows the old list, and it reloads when the shot ends.
 - [ ] Tap start during a WiFi update you make fail, with the machine unplugged. The ESP32 should restart, and no
       shot should start.
 - [ ] A failed LittleFS mount no longer formats the flash, and the app shows a warning instead.
@@ -38,6 +39,7 @@ Bugs and cleanup found while reading the code on 5 Nov 2026. Planned work is in
 
 ## Cleanup
 
+- [ ] Update the repo's description on GitHub. The owner will do this.
 - [ ] Find out who owns the 1996 Carezza wiring diagram and whether it can be shared. It was removed from
       the repo (a local copy is git-ignored at `docs/images/carezza-1996-schematic.png`). If it's free to
       share, add it back to the end of `docs/hardware.md`.

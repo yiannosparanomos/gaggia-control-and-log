@@ -139,6 +139,48 @@ machine.
 **If you heard a click in step 5,** keep the machine unplugged during every update until that's fixed, because with
 mains connected that click would start the pump. If there was no click, later WiFi updates can run with it plugged in.
 
+## Working from a second laptop
+
+Everything needed to build and test is in git, except a few private files. To set up another laptop:
+
+1. Install Git, Node.js 26, and PlatformIO (the VS Code extension is enough).
+2. Clone the repo, then install the tools:
+
+   ```sh
+   git clone https://github.com/yiannosparanomos/gaggia-control-and-log.git
+   cd gaggia-control-and-log/web
+   npm install                     # also turns on the git hook that checks the docs
+   npx playwright install chromium
+   ```
+
+3. Set your git name and email. The email is public once you push, so consider your
+   [GitHub no-reply address](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address).
+4. Create `firmware/src/secrets.h` from `secrets.example.h`, using the same WiFi details. If it's missing,
+   `npm run check` creates one with placeholder details, and uploading that takes the ESP32 off the WiFi until you
+   flash it again by USB.
+5. Copy `CLAUDE.local.md` across if you use one. Keep this and `secrets.h` out of git.
+6. Run `npm run check` in `web/` to confirm the setup works.
+
+`backups/` doesn't need copying, because each laptop saves its own backup before each upload. Keep the older files
+somewhere safe all the same.
+
+To share a branch between laptops:
+
+- **Before you start:** run `git pull --rebase`.
+- **When you stop:** commit and push, even if the work is unfinished.
+- **If `firmware/src/web_assets.h` conflicts:** finish the merge in the other files, run `npm run build` in `web/`,
+  then add the regenerated file. Don't merge it by hand.
+- **Before you upload:** pull first. The ESP32 runs whatever you flash last, so an upload from an older copy of the
+  code quietly removes newer work from it.
+
+**WiFi uploads on Windows** need the ESP32 to connect back to the laptop, so allow Python through the firewall on
+private networks if Windows asks. If an upload stops at `No response from device`, the prompt was probably declined.
+To fix that, run this in PowerShell as administrator:
+
+```powershell
+Get-NetFirewallApplicationFilter -Program "$env:USERPROFILE\.platformio\python3\python.exe" | Get-NetFirewallRule | Where-Object { $_.Profile -match 'Private' } | Set-NetFirewallRule -Action Allow
+```
+
 ## CI and the demo
 
 GitHub Actions runs `npm run check` on every pull request and on `main`. A separate workflow publishes the
