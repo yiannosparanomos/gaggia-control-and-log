@@ -60,6 +60,7 @@
   @keyframes blink { 50% { opacity: 0.15; } }
   .target { color: var(--soft); }
   .digits { font-family: var(--font-dots); font-weight: 900; font-size: clamp(88px, 30vw, 132px); line-height: 0.9; letter-spacing: 0.01em; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; justify-content: center; gap: 8px; }
+  .digits .point { display: inline-block; width: 0.1em; height: 0.1em; margin: 0 0.05em; background: currentColor; text-indent: 1em; overflow: hidden; }
   .digits small { font-family: var(--font-text); font-weight: 500; font-size: 1rem; color: var(--soft); letter-spacing: 0; }
   .dots { display: grid; grid-template-columns: repeat(30, 1fr); gap: 4px; }
   .dots i { aspect-ratio: 1; max-width: 100%; border-radius: 50%; background: var(--hair); display: block; }

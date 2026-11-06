@@ -143,7 +143,9 @@ import './style.css';
 
   function frame() {
     const e = shownElapsed();
-    $('sec').textContent = e.toFixed(1);
+    const [whole, tenth] = e.toFixed(1).split('.');
+    $('sec').textContent = whole;
+    $('tenth').textContent = tenth;
     const scale = S.auto ? S.limit : MAX_S;
     const n = Math.min(NDOTS, Math.round((e / scale) * NDOTS));
     for (let i = 0; i < NDOTS; i++) dotEls[i].classList.toggle('on', i < n);
