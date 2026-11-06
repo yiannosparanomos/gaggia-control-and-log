@@ -66,8 +66,9 @@ if (build.status !== 0) stop('The UI build failed.');
 
 // Compiling takes a while, and a shot could start meanwhile. A USB upload resets the ESP32, which would
 // leave the pump running with no stops, so compile first and check again just before uploading.
-const buildArgs = usb ? ['run'] : ['run', '-e', 'esp32dev_ota', '--upload-port', new URL(host).hostname];
-if (!pio(buildArgs, join(root, 'firmware'))) stop(`The firmware did not compile. Your backup is at ${file}`);
+// The same for both, or the upload would recompile after the check. Without the address, an OTA compile prints a false error.
+const target = usb ? [] : ['-e', 'esp32dev_ota', '--upload-port', new URL(host).hostname];
+if (!pio(['run', ...target], join(root, 'firmware'))) stop(`The firmware did not compile. Your backup is at ${file}`);
 try {
   const again = await getEither('/status');
   if (again.data?.state !== 'idle' && again.data?.state !== 'done') stop(`Can't confirm the ESP32 is free. Your backup is at ${file}`);
@@ -76,10 +77,7 @@ try {
 }
 
 if (usb) console.log('\nIf it hangs at "Connecting...", hold the BOOT button until the upload starts.');
-const args = usb
-  ? ['run', '-t', 'upload']
-  : ['run', '-e', 'esp32dev_ota', '-t', 'upload', '--upload-port', new URL(host).hostname];
-if (!pio(args, join(root, 'firmware'))) stop(`The upload failed. Your backup is at ${file}`);
+if (!pio(['run', ...target, '-t', 'upload'], join(root, 'firmware'))) stop(`The upload failed. Your backup is at ${file}`);
 
 // The new firmware always has /api routes. Give it time to reboot and rejoin WiFi.
 console.log('\nUploaded. Waiting for the ESP32 to restart...');

@@ -193,3 +193,55 @@ test('the journal reloads after a shot, because the ESP32 refuses reads during o
   await app.locator('#tabLog').click();
   await expect(app.locator('#log')).toContainText('Late Brew');
 });
+
+test('reloading during a shot never says the journal is empty', async ({ app, fake }) => {
+  fake.brews.push({ id: 1, ts: 1, coffee: 'Saved Brew' });
+  fake.status.state = 'brewing';
+  const coffeesRead = app.waitForResponse('**/api/coffees');
+  await app.reload();
+  await coffeesRead;
+  await app.locator('#tabLog').click();
+  await app.waitForTimeout(300); // let the refused read finish and the list render
+  await expect(app.locator('#logEmpty')).toBeHidden();
+
+  fake.status.state = 'done';
+  await expect(app.locator('#log')).toContainText('Saved Brew');
+});
+
+test('during a shot, delete explains itself and backup is hidden', async ({ app, fake }) => {
+  fake.brews.push({ id: 1, ts: 1, coffee: 'Saved Brew' });
+  await app.locator('#tabLog').click();
+  await expect(app.locator('#backupLink')).toBeVisible();
+  await app.locator('[data-ask]').click();
+
+  fake.status.state = 'brewing';
+  await expect(app.locator('#backupLink')).toBeHidden();
+  await app.locator('[data-del]').click();
+  await expect(app.locator('#toast')).toHaveText('Not deleted. Try again after the shot.');
+  expect(fake.brews).toHaveLength(1);
+
+  fake.status.state = 'done';
+  await expect(app.locator('#backupLink')).toBeVisible();
+});
+
+test('a restore that fills the storage says so, not "bad file"', async ({ app, fake }) => {
+  await expect.poll(() => fake.log).toContain('GET /api/coffees');
+  fake.storageFull = true;
+  await app.locator('#tabLog').click();
+  await app.locator('#restoreFile').setInputFiles({
+    name: 'gaggia-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ brews: [{ id: 9, ts: 9 }], coffees: [] })),
+  });
+  await expect(app.locator('#toast')).toHaveText('Restore stopped. The ESP32 storage is full.');
+});
+
+test('a full journal says so, not "check the connection"', async ({ app, fake }) => {
+  fake.storageFull = true;
+  await app.locator('#tabLog').click();
+  await app.locator('#newEntry').click();
+  await app.locator('#fCoffee').fill('One Too Many');
+  await app.locator('#form button[type=submit]').click();
+  await expect(app.locator('#toast')).toContainText('storage is full');
+  expect(fake.brews).toEqual([]);
+});

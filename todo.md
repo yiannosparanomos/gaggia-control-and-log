@@ -53,7 +53,11 @@ The first upload needs the cable: `npm run flash -- --usb` in `web/`. It backs u
       firmware, or overwrite the journal with a filesystem image.
 - [ ] Move the auto-stop and safety stop into their own FreeRTOS task. Journal routes now wait until a shot is
       over, but reloading the page during a shot could still delay the stops if the phone drops off WiFi.
-- [ ] **Flash is tight:** the firmware is 94.9% of the 1.25 MB app partition, including about 41 KB for WiFi
+- [ ] **Deleting needs room for a second copy of the journal.** Once the journal is over about half of the
+      1.4 MB storage (roughly 2,000 brews), deleting fails with an error, though nothing is lost. If storage then
+      fills, new brews are refused too, and only a filesystem wipe after a backup frees it. Far off, but needs an
+      answer before then, such as an in-place delete.
+- [ ] **Flash is tight:** the firmware is 95.0% of the 1.25 MB app partition, including about 41 KB for WiFi
       updates. Growing the partition would wipe the journal. Before adding the scale or SSE, look for savings:
       replacing the fonts would help, and each weight is about 18 KB.
 

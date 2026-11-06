@@ -18,6 +18,7 @@ export async function startFake() {
     coffees: structuredClone(COFFEES),
     brews: [],
     failCoffeeLoad: false,
+    storageFull: false,
     log: [],
   };
 
@@ -43,8 +44,14 @@ export async function startFake() {
       if (path === '/api/status') return json(fake.status);
       if (path === '/api/brews') {
         if (req.method === 'GET' && fake.status.state === 'brewing') return fail(503); // like the firmware
+        if (req.method === 'POST' && fake.storageFull) return fail(507);
         if (req.method === 'POST') fake.brews.push(JSON.parse(body));
         return json(req.method === 'POST' ? { ok: true } : fake.brews);
+      }
+      if (path === '/api/brews/delete') {
+        if (fake.status.state === 'brewing') return fail(503);
+        fake.brews = fake.brews.filter((b) => String(b.id) !== url.searchParams.get('id'));
+        return json({ ok: true });
       }
       if (path === '/api/coffees') {
         if (req.method === 'POST') {

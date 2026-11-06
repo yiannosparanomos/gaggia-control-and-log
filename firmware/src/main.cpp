@@ -30,6 +30,7 @@ const char* hostname = "espresso";           // -> http://espresso.local
 const unsigned long PRESS_MS    = 500;       // how long the relay "presses" the button
 const int           MIN_LIMIT_S = 5;
 const int           MAX_LIMIT_S = 60;
+const size_t        MIN_FREE_BYTES = 8192;   // new brews are refused below this
 // Keep false: a failed mount must never erase the journal. Set true for one upload only on a brand-new board.
 const bool          FORMAT_IF_MOUNT_FAILS = false;
 
@@ -159,10 +160,7 @@ size_t fileSize(const char* path) {
 // Swaps a finished temp file over the real one. The real file is untouched until the temp file is
 // proven complete, and LittleFS's rename replaces it in one step, so a power cut leaves old or new, never neither.
 bool commitFile(const char* tmp, const char* path, size_t expectedSize) {
-  File check = LittleFS.open(tmp, "r");
-  bool ok = check && check.size() == expectedSize;
-  if (check) check.close();
-  if (ok) ok = LittleFS.rename(tmp, path);
+  bool ok = fileSize(tmp) == expectedSize && LittleFS.rename(tmp, path);
   if (!ok) LittleFS.remove(tmp);
   return ok;
 }
@@ -246,6 +244,9 @@ void handleBrewsPost() {
     server.send(400, "text/plain", "bad brew");
     return;
   }
+  if (!storageOk) { server.send(500, "text/plain", "storage error"); return; }   // sizes read as 0, not "full"
+  // A brew cut off by full flash would make the whole journal unreadable, so refuse it before writing
+  if (LittleFS.usedBytes() + MIN_FREE_BYTES > LittleFS.totalBytes()) { server.send(507, "text/plain", "storage full"); return; }
   size_t before = fileSize(BREWS_FILE);
   File f = LittleFS.open(BREWS_FILE, "a");
   if (!f) { server.send(500, "text/plain", "storage error"); return; }
@@ -275,14 +276,18 @@ void handleBrewsDelete() {
   size_t written = 0;
   bool complete = true;
   while (in.available()) {
+    size_t start = in.position();
     String l = in.readStringUntil('\n');
+    // A read error or low memory gives back fewer bytes than the file moved. available() can't show this.
+    size_t used = in.position() - start;
+    bool lastLineNoNewline = used == l.length() && in.position() == in.size();
+    if (used != l.length() + 1 && !lastLineNoNewline) { complete = false; break; }
     l.trim();
     if (!l.length() || l.startsWith(prefix)) continue;
     size_t n = out.println(l);
     if (n != l.length() + 2) { complete = false; break; }   // flash full: +2 is the line ending
     written += n;
   }
-  if (in.position() != in.size()) complete = false;   // a short read must not shrink the journal
   in.close(); out.close();
   if (!complete) LittleFS.remove(tmp);
   if (!complete || !commitFile(tmp, BREWS_FILE, written)) {

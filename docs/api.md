@@ -18,7 +18,7 @@ The route table is checked against the firmware. When you change the API, change
 | POST | `/api/reset` | Resets the screen state only, without using the relay. During a timed shot it needs `?confirm=1`. Returns status |
 | POST | `/api/set` | Settings, from `?limit=30` (5–60 s) and `?auto=1`. Returns status |
 | GET | `/api/brews` | All brews, as an array. Returns 503 during a shot |
-| POST | `/api/brews` | Add one brew. The body is JSON sent as `text/plain` |
+| POST | `/api/brews` | Add one brew. The body is JSON sent as `text/plain`. Returns 507 when under 8 KB of storage is free |
 | POST | `/api/brews/delete` | Delete the brew given by `?id=`. Returns 503 during a shot |
 | GET | `/api/coffees` | All coffees, as an array |
 | POST | `/api/coffees` | Replace the whole coffees array |

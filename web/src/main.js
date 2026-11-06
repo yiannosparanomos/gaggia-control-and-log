@@ -114,6 +114,7 @@ import './style.css';
     $('stepper').classList.toggle('dim', !S.auto);
     $('press').disabled = brewing;
     $('storageBanner').hidden = S.storage !== false;
+    $('backupLink').hidden = SIM || brewing;   // the ESP32 refuses backups during a shot
     document.querySelectorAll('#presets .chip').forEach((c) => c.classList.toggle('on', +c.dataset.v === S.limit));
 
     const rec = $('recent'); rec.innerHTML = '';
@@ -291,7 +292,7 @@ import './style.css';
       closeForm(); render(); toast('saved.');
       loadData();
     } catch (err) {
-      toast('Not saved. Check the connection to the ESP32 and try again.');
+      toast(err.message === 'HTTP 507' ? 'Not saved. The ESP32 storage is full.' : 'Not saved. Check the connection to the ESP32 and try again.');
     }
   });
 
@@ -333,7 +334,7 @@ import './style.css';
     $('modeCal').setAttribute('aria-pressed', String(mode === 'cal'));
     if (mode === 'list') {
       $('log').innerHTML = brews.map(entryHTML).join('');
-      $('logEmpty').hidden = brews.length > 0;
+      $('logEmpty').hidden = brews.length > 0 || !brewsLoaded;   // unknown isn't empty: reads are refused during a shot
     } else renderCal();
   }
   function renderCal() {
@@ -355,7 +356,7 @@ import './style.css';
     $('dayTitle').textContent = new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).toLowerCase() + '.';
     const list = byDay[selDay] || [];
     $('dayList').innerHTML = list.map(entryHTML).join('');
-    $('dayEmpty').hidden = list.length > 0;
+    $('dayEmpty').hidden = list.length > 0 || !brewsLoaded;
   }
   $('modeList').addEventListener('click', () => { mode = 'list'; renderLog(); });
   $('modeCal').addEventListener('click', () => { mode = 'cal'; renderLog(); });
@@ -369,12 +370,12 @@ import './style.css';
     else if (keep) { pendingDelete = null; renderLog(); }
     else if (del) {
       try { await request('/api/brews/delete?id=' + del.dataset.del, ' '); pendingDelete = null; toast('deleted.'); loadData(); }
-      catch (err) { toast('Not deleted. Check the connection.'); }
+      catch (err) { toast(err.message === 'HTTP 503' ? 'Not deleted. Try again after the shot.' : 'Not deleted. Check the connection.'); }
     }
   });
 
   // backup and restore
-  if (SIM) { $('backupLink').hidden = true; $('backupSimNote').hidden = false; }
+  if (SIM) $('backupSimNote').hidden = false;
   $('restoreFile').addEventListener('change', async (e) => {
     const file = e.target.files && e.target.files[0]; e.target.value = '';
     if (!file) return;
@@ -395,7 +396,8 @@ import './style.css';
       toast('Restored ' + added + ' shots.');
       loadData();
     } catch (err) {
-      toast('That file could not be read. Pick a gaggia-backup.json file.');
+      if (err.message === 'HTTP 507') { toast('Restore stopped. The ESP32 storage is full.'); loadData(); }
+      else toast('That file could not be read. Pick a gaggia-backup.json file.');
     }
   });
 
