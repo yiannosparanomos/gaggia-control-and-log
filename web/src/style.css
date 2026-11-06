@@ -9,7 +9,7 @@
     --grid: #d6d6cf;
     --signal: #d71921;
     --font-text: "Commissioner", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --font-dots: "Doto", ui-monospace, "SF Mono", Menlo, monospace;
+    --font-dots: "Doto", "Commissioner", ui-monospace, "SF Mono", Menlo, monospace;
     color-scheme: light;
   }
   * { box-sizing: border-box; }
