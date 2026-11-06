@@ -10,7 +10,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const web = join(root, 'web');
 const firmware = join(root, 'firmware');
 const PAGE_GZ_LIMIT = 90 * 1024;
-const FLASH_LIMIT = Math.floor(0x140000 * 0.97); // the app partition is 0x140000 bytes and can't grow
+const APP_PARTITION = 0x180000; // from firmware/partitions.csv
+const FLASH_LIMIT = Math.floor(APP_PARTITION * 0.97);
 
 function run(cmd, args, cwd) {
   return spawnSync(cmd, args, { cwd, stdio: 'inherit', shell: process.platform === 'win32' }).status === 0;
@@ -25,6 +26,10 @@ const steps = {
     const tracked = spawnSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).stdout.split('\n');
     const bad = tracked.filter((f) => /(^|\/)secrets\.h$|(^|\/)CLAUDE\.local\.md$|^backups\/|carezza-1996-schematic/.test(f));
     if (bad.length) fail(`These must not be in git: ${bad.join(', ')}`);
+  },
+
+  'firmware never formats its storage by itself'() {
+    if (/FORMAT_IF_MOUNT_FAILS = true/.test(readFileSync(join(firmware, 'src', 'main.cpp'), 'utf8'))) fail('Set FORMAT_IF_MOUNT_FAILS back to false in main.cpp.');
   },
 
   'build tool tests'() {
@@ -63,7 +68,7 @@ const steps = {
     if (!existsSync(secrets)) copyFileSync(join(firmware, 'src', 'secrets.example.h'), secrets);
     if (!pio(['run'], firmware)) fail('The firmware did not compile.');
     const size = statSync(join(firmware, '.pio', 'build', 'esp32dev', 'firmware.bin')).size;
-    console.log(`Firmware: ${(size / 1024).toFixed(0)} KB, ${((size / 0x140000) * 100).toFixed(1)}% of the app partition (limit 97%)`);
+    console.log(`Firmware: ${(size / 1024).toFixed(0)} KB, ${((size / APP_PARTITION) * 100).toFixed(1)}% of the app partition (limit 97%)`);
     if (size > FLASH_LIMIT) fail('The firmware is over its size limit.');
   },
 };

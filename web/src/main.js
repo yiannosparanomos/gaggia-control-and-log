@@ -381,10 +381,13 @@ import './style.css';
     if (!file) return;
     // Needs the current lists to skip duplicates and to merge coffees rather than replace them
     if (!brewsLoaded || !coffeesLoaded) { toast('Not restored. Check the connection and try again.'); return; }
+    let data;
+    try { data = JSON.parse(await file.text()); }
+    catch (err) { toast('That file could not be read. Pick a gaggia-backup.json file.'); return; }
     try {
-      const data = JSON.parse(await file.text());
       const inBrews = Array.isArray(data.brews) ? data.brews : [], inCoffees = Array.isArray(data.coffees) ? data.coffees : [];
-      const have = new Set(brews.map((b) => String(b.id)));
+      // Read again: the list on screen may be out of date, and the ESP32 doesn't check for duplicates
+      const have = new Set((await request('/api/brews')).map((b) => String(b.id)));
       let added = 0;
       for (const b of inBrews) {
         if (!b || b.id == null || have.has(String(b.id))) continue;
@@ -396,8 +399,8 @@ import './style.css';
       toast('Restored ' + added + ' shots.');
       loadData();
     } catch (err) {
-      if (err.message === 'HTTP 507') { toast('Restore stopped. The ESP32 storage is full.'); loadData(); }
-      else toast('That file could not be read. Pick a gaggia-backup.json file.');
+      toast(err.message === 'HTTP 507' ? 'Restore stopped. The ESP32 storage is full.' : 'Restore stopped. Check the connection, then pick the file again.');
+      loadData();
     }
   });
 

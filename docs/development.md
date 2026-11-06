@@ -10,6 +10,21 @@ The journal lives on the ESP32's flash, and a normal `pio run -t upload` doesn't
 - Take a backup before any change that touches partitions or the storage format (`npm run flash -- --dry-run`).
 - A new storage format needs a migration that reads the old files.
 
+### Changing the partition table
+
+This wipes the journal, so it's only worth doing rarely. A WiFi update can't change the table, so use the cable.
+Unplug the machine from mains and disconnect the relay's COM and NO wires first, because a relay click during a
+restart would start the pump. Then:
+
+1. Set `FORMAT_IF_MOUNT_FAILS = true` in `main.cpp`. Without it, the new storage can't be created.
+2. Run `npm run flash -- --usb`. It saves a backup and prints its path, uploads, then warns that the journal has
+   0 brews. That's expected this once. If it says the storage did not mount, step 1 was missed.
+3. Open the app and use **restore from file** with the backup from step 2. Check the brew count. If a restore
+   stops partway, picking the file again is safe, because brews already restored are skipped.
+4. Set `FORMAT_IF_MOUNT_FAILS` back to `false`.
+5. Run `npm run flash`, and confirm it reports all your brews. `npm run check` and WiFi uploads refuse to run
+   until step 4 is done.
+
 ## Testing
 
 `npm run check` in `web/` runs everything a change must pass, and CI runs the same command. None of it uses
@@ -18,6 +33,7 @@ AI tokens.
 | Check | What it catches |
 |---|---|
 | No private files tracked | `secrets.h`, `CLAUDE.local.md` or journal backups in git |
+| Firmware never formats by itself | `FORMAT_IF_MOUNT_FAILS` left on after a one-time upload |
 | Build tool tests | Mistakes in the flash command's safety checks |
 | Docs match the code | An API table that differs from the firmware, and broken links |
 | UI builds, up to date, under 90 KB gzipped | A broken build, firmware shipping an old UI, a page that's too big |
@@ -55,7 +71,7 @@ but not that it's right, so read the diff too. In Claude Code, the `docs-keeper`
 ## Building
 
 - `platformio.ini` pins the platform version, which currently brings Arduino core **3.3.12**.
-- Flash use is about 93% of the 1.25 MB app partition, and it can't grow without wiping the journal.
+- The firmware is about 79% of its 1.5 MB app partition, which can't grow without wiping the journal.
 - The gzipped page is about 72 KB.
 - npm may ask to approve esbuild's install script (`npm install-scripts approve esbuild`). It's Vite's
   normal build tool.

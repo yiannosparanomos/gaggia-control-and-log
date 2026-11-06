@@ -236,6 +236,39 @@ test('a restore that fills the storage says so, not "bad file"', async ({ app, f
   await expect(app.locator('#toast')).toHaveText('Restore stopped. The ESP32 storage is full.');
 });
 
+test('a failed restore can be retried without duplicating brews', async ({ app, fake }) => {
+  await expect.poll(() => fake.log).toContain('GET /api/coffees');
+  // The second save fails, and so does the reload after it, as on a bad connection. The list on screen stays old.
+  let posts = 0, failNextRead = false, readFailed = false;
+  await app.route('**/api/brews', (route) => {
+    if (route.request().method() === 'POST' && ++posts === 2) { failNextRead = true; return route.fulfill({ status: 500 }); }
+    if (route.request().method() === 'GET' && failNextRead) { failNextRead = false; readFailed = true; return route.fulfill({ status: 500 }); }
+    return route.fallback();
+  });
+  const file = {
+    name: 'gaggia-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ brews: [{ id: 1, ts: 1 }, { id: 2, ts: 2 }], coffees: [] })),
+  };
+  await app.locator('#tabLog').click();
+
+  await app.locator('#restoreFile').setInputFiles(file);
+  await expect(app.locator('#toast')).toContainText('Restore stopped');
+  expect(fake.brews.map((b) => b.id)).toEqual([1]);
+  await expect.poll(() => readFailed).toBe(true);
+
+  await app.locator('#restoreFile').setInputFiles(file);
+  await expect(app.locator('#toast')).toHaveText('Restored 1 shots.');
+  expect(fake.brews.map((b) => b.id)).toEqual([1, 2]);
+});
+
+test('a backup that is not valid JSON is called a bad file', async ({ app, fake }) => {
+  await expect.poll(() => fake.log).toContain('GET /api/coffees');
+  await app.locator('#tabLog').click();
+  await app.locator('#restoreFile').setInputFiles({ name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('not json') });
+  await expect(app.locator('#toast')).toContainText('could not be read');
+});
+
 test('a full journal says so, not "check the connection"', async ({ app, fake }) => {
   fake.storageFull = true;
   await app.locator('#tabLog').click();

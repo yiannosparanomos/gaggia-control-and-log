@@ -31,7 +31,8 @@ const unsigned long PRESS_MS    = 500;       // how long the relay "presses" the
 const int           MIN_LIMIT_S = 5;
 const int           MAX_LIMIT_S = 60;
 const size_t        MIN_FREE_BYTES = 8192;   // new brews are refused below this
-// Keep false: a failed mount must never erase the journal. Set true for one upload only on a brand-new board.
+// Keep false: a failed mount must never erase the journal. Set true for one USB upload only, on a brand-new
+// board or after changing the partition table. `npm run check` and WiFi uploads refuse it.
 const bool          FORMAT_IF_MOUNT_FAILS = false;
 
 // ============== STATE ==============

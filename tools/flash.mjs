@@ -4,7 +4,7 @@
 //   npm run flash -- --dry-run    only the safety checks and the backup
 // ESP=http://x.x.x.x picks another address. It never erases flash or uploads a filesystem.
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pio } from './pio.mjs';
@@ -41,6 +41,9 @@ try {
 if (!status.data) stop(`${host} didn't return a status.`);
 if (status.data.state === 'brewing') stop('A shot is running.');
 if (status.oldFirmware && !usb && !dryRun) stop('This firmware has no WiFi updates yet. Connect the cable and run: npm run flash -- --usb');
+if (!usb && !dryRun && /FORMAT_IF_MOUNT_FAILS = true/.test(readFileSync(join(root, 'firmware', 'src', 'main.cpp'), 'utf8'))) {
+  stop('Set FORMAT_IF_MOUNT_FAILS back to false in main.cpp first. Left on, a failed mount would erase the journal.');
+}
 
 let backup;
 try {
@@ -50,11 +53,17 @@ try {
 }
 if (!Array.isArray(backup?.brews) || !Array.isArray(backup?.coffees)) stop('The backup was not valid.');
 
-mkdirSync(backupDir, { recursive: true });
-const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-const file = join(backupDir, `gaggia-${stamp}.json`);
-writeFileSync(file, JSON.stringify(backup));
-console.log(`Backed up ${backup.brews.length} brews and ${backup.coffees.length} coffees to ${file}`);
+// An empty backup protects nothing, and as the newest file it could be mistaken for the real one.
+let file = 'not saved, because the journal was empty';
+if (backup.brews.length || backup.coffees.length) {
+  mkdirSync(backupDir, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  file = join(backupDir, `gaggia-${stamp}.json`);
+  writeFileSync(file, JSON.stringify(backup));
+  console.log(`Backed up ${backup.brews.length} brews and ${backup.coffees.length} coffees to ${file}`);
+} else {
+  console.log('The journal is empty or its storage did not mount, so no backup was saved.');
+}
 
 if (dryRun) {
   console.log('Dry run: stopping before the build and upload.');
@@ -86,6 +95,10 @@ for (let i = 0; i < 30; i++) {
   try {
     const brews = await getJson('/api/brews', 5000);
     if (!Array.isArray(brews)) continue;
+    if ((await getJson('/api/status', 5000))?.storage === false) {
+      console.error(`WARNING: the journal's storage did not mount. After a partition change, FORMAT_IF_MOUNT_FAILS must be true for one upload. Your backup is at ${file}`);
+      process.exit(1);
+    }
     if (brews.length !== backup.brews.length) {
       console.error(`WARNING: the journal now has ${brews.length} brews, and the backup has ${backup.brews.length}. Your backup is at ${file}`);
       process.exit(1);

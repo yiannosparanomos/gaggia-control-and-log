@@ -98,6 +98,20 @@ test('a WiFi update compiles and uploads the same target, then confirms the jour
   assert.match(r.output, /still has all 2 brews/);
 });
 
+test('an empty journal saves no backup, so a real one stays the newest', async () => {
+  const r = await runFlash({ '/api/status': idle, '/api/backup': { version: 1, brews: [], coffees: [] } });
+  assert.equal(r.code, 0, r.output);
+  assert.equal(r.files.length, 0);
+});
+
+test('storage that did not mount after an upload is reported as that', async () => {
+  let checks = 0;
+  const status = () => (++checks <= 2 ? idle : { state: 'idle', storage: false });
+  const r = await runFlash({ '/api/status': status, '/api/backup': backup, '/api/brews': [] }, ['--usb']);
+  assert.equal(r.code, 1);
+  assert.match(r.output, /storage did not mount/);
+});
+
 test('refuses when the ESP32 is unreachable', async () => {
   const child = spawn(process.execPath, [flash, '--dry-run'], { env: { ...process.env, ESP: 'http://127.0.0.1:9' } });
   const code = await new Promise((resolve) => child.on('close', resolve));

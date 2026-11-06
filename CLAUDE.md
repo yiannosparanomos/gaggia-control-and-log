@@ -57,7 +57,7 @@ Run in `web/`. Details: `docs/development.md`.
   start shots unattended).
 
 ## Data on the ESP32 (do not lose it)
-- LittleFS on the default partition (`default.csv`, ~1.4 MB):
+- LittleFS on a custom partition (`firmware/partitions.csv`, 896 KB):
   - `/brews.jsonl` and `/coffees.json`, plus settings in NVS. Formats: `docs/api.md`.
 - **Never** run `pio run -t uploadfs`, `pio run -t erase`, or change the partition table: all wipe
   the journal. If a change truly needs it, tell the user to take a backup first (`npm run flash -- --dry-run`).

@@ -21,15 +21,27 @@ Bugs and cleanup found while reading the code on 5 Nov 2026. Planned work is in
 
 ## Fixed in code: check on the real machine
 
-The first upload needs the cable: `npm run flash -- --usb` in `web/`. It backs up the journal first.
+**Before the first upload, unplug the machine from mains and disconnect the relay's COM and NO wires.** A relay
+click during a restart would start the pump, with no timed shot running to stop it.
 
-**Before the first upload, unplug the machine from mains and disconnect the relay's COM and NO wires.** Then:
+The first upload needs the cable, and it also moves to the new partition table, which wipes the journal once.
+Run these in `web/`, in this order:
 
-- [ ] Listen for a relay click during each restart. With the wires connected, a click there would start the pump.
-      If it clicks, don't reconnect until that's fixed.
+1. Set `FORMAT_IF_MOUNT_FAILS = true` in `firmware/src/main.cpp`.
+2. `npm run flash -- --usb`. It backs up the journal first and prints the backup's path, so note it. Check that it
+   reports 11 or more brews. At the end it warns that the journal has 0 brews, which is expected this once. If it
+   says the storage did not mount, step 1 was missed: do step 1, then run this again.
+3. On the PC, open `http://192.168.2.6`, go to the log tab and use **restore from file** with the backup from step 2.
+   Check that all the brews and coffees are back.
+4. Set `FORMAT_IF_MOUNT_FAILS` back to `false`.
+5. `npm run flash` over WiFi. It should say the journal still has all your brews.
+
+Then:
+
+- [ ] Listen for a relay click during each restart. If it clicks, don't reconnect until that's fixed.
 - [ ] Only then reconnect the wires, with the machine still unplugged, and plug it back in.
 
-- [ ] After the first upload, `npm run flash` works over WiFi.
+- [ ] Step 5 above also proves that WiFi uploads work.
 - [ ] Actions and settings are POST only. Start, stop, change the limit, and toggle auto stop from the phone.
 - [ ] Opening `/api/start` in a browser returns 404 and the relay doesn't click.
 - [ ] Reset during a shot needs a second tap, and `/api/press` does nothing during a shot.
@@ -54,12 +66,9 @@ The first upload needs the cable: `npm run flash -- --usb` in `web/`. It backs u
 - [ ] Move the auto-stop and safety stop into their own FreeRTOS task. Journal routes now wait until a shot is
       over, but reloading the page during a shot could still delay the stops if the phone drops off WiFi.
 - [ ] **Deleting needs room for a second copy of the journal.** Once the journal is over about half of the
-      1.4 MB storage (roughly 2,000 brews), deleting fails with an error, though nothing is lost. If storage then
+      896 KB storage (roughly 2,000 brews), deleting fails with an error, though nothing is lost. If storage then
       fills, new brews are refused too, and only a filesystem wipe after a backup frees it. Far off, but needs an
-      answer before then, such as an in-place delete.
-- [ ] **Flash is tight:** the firmware is 95.0% of the 1.25 MB app partition, including about 41 KB for WiFi
-      updates. Growing the partition would wipe the journal. Before adding the scale or SSE, look for savings:
-      replacing the fonts would help, and each weight is about 18 KB.
+      answer before then, such as an in-place delete or moving old brews to Google storage.
 
 ## Next: AI features
 
